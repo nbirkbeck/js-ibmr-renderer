@@ -1,0 +1,185 @@
+<html>
+<script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r61/three.js"> </script>
+<script src="pcamesh.js"> </script>
+<script src="reader.js"> </script>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+varying vec2 vUv;
+
+void main() {
+  vUv = uv;
+
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+varying vec2 vUv;
+uniform sampler2D textureY0;
+uniform sampler2D textureY1;
+uniform sampler2D textureY2;
+uniform sampler2D textureY3;
+uniform sampler2D textureU0;
+uniform sampler2D textureU1;
+uniform sampler2D textureU2;
+uniform sampler2D textureU3;
+uniform sampler2D textureV0;
+uniform sampler2D textureV1;
+uniform sampler2D textureV2;
+uniform sampler2D textureV3;
+uniform float coeffY[16];
+uniform float coeffU[16];
+uniform float coeffV[16];
+uniform mat4 colorMatrix;
+
+
+#define scale(i) vec4(2.0 * (i.x - 0.5), 2.0 * (i.y - 0.5), 2.0 * (i.z - 0.5), 2.0 * (i.w - 0.5));
+
+void main() {
+  vec4 tex0 = scale(texture2D(textureY0, vUv));
+  vec4 tex1 = scale(texture2D(textureY1, vUv));
+  vec4 tex2 = scale(texture2D(textureY2, vUv));
+  vec4 tex3 = scale(texture2D(textureY3, vUv));
+
+  float y = dot(vec4(coeffY[0], coeffY[1], coeffY[2], coeffY[3]), tex0) + 
+     dot(vec4(coeffY[4], coeffY[5], coeffY[6], coeffY[7]), tex1) + 
+     dot(vec4(coeffY[8], coeffY[9], coeffY[10], coeffY[11]), tex2) +
+     dot(vec4(coeffY[12], coeffY[13], coeffY[14], coeffY[15]), tex3);
+
+  tex0 = scale(texture2D(textureU0, vUv));
+  tex1 = scale(texture2D(textureU1, vUv));
+  tex2 = scale(texture2D(textureU2, vUv));
+  tex3 = scale(texture2D(textureU3, vUv));
+
+  float u = dot(vec4(coeffU[0], coeffU[1], coeffU[2], coeffU[3]), tex0) + 
+     dot(vec4(coeffU[4], coeffU[5], coeffU[6], coeffU[7]), tex1) + 
+     dot(vec4(coeffU[8], coeffU[9], coeffU[10], coeffU[11]), tex2) +
+     dot(vec4(coeffU[12], coeffU[13], coeffU[14], coeffU[15]), tex3);
+
+  tex0 = scale(texture2D(textureV0, vUv));
+  tex1 = scale(texture2D(textureV1, vUv));
+  tex2 = scale(texture2D(textureV2, vUv));
+  tex3 = scale(texture2D(textureV3, vUv));
+  float v = dot(vec4(coeffV[0], coeffV[1], coeffV[2], coeffV[3]), tex0) + 
+     dot(vec4(coeffV[4], coeffV[5], coeffV[6], coeffV[7]), tex1) + 
+     dot(vec4(coeffV[8], coeffV[9], coeffV[10], coeffV[11]), tex2) +
+     dot(vec4(coeffV[12], coeffV[13], coeffV[14], coeffV[15]), tex3);
+
+  vec4 rgb = colorMatrix * vec4(y, u, v, 0.0);
+  gl_FragColor = vec4(rgb.x, rgb.y, rgb.z, 1.0);
+}
+</script>
+
+
+<style>
+.container {
+  width: 640px;
+  height: 480px;
+}
+
+canvas {
+  width: 640px;
+  height: 480px;
+}
+
+</style>
+<body>
+test2.
+<img src='' id='image' />
+<div class='container' id='container'>
+</div>
+<script>
+var object;
+var image = document.getElementById('image');
+var oReq = new XMLHttpRequest();
+var loaded = 0;
+
+oReq.responseType = "arraybuffer";
+console.log('Sending request');
+console.log(oReq);
+
+image.onload = function () {
+  console.log('Loading image');
+};
+oReq.onerror = function (oEvent) {
+  console.log('error');
+};
+oReq.onabort = function (oEvent) {
+  console.log('error');
+};
+oReq.onload = function (oEvent) {
+  var arrayBuffer = oReq.response;
+  if (arrayBuffer) {
+    var byteArray = new Uint8Array(arrayBuffer);
+    var reader = new YxvFileReader();
+    console.log(reader);
+    reader.read(byteArray);
+
+    var blob = reader.objects[0].getBasis(1)[0]; 
+    object = reader.objects[0];
+
+    object.loadBasisImages(function(urls) {
+      //image.setAttribute('src', URL.createObjectURL(blob));
+      //image.setAttribute('src', urls[0]);
+
+      var vertShader = document.getElementById('vertexShader');
+      var fragShader = document.getElementById('fragmentShader');
+
+      object.setShaders(vertShader.innerHTML, fragShader.innerHTML);
+      scene.add(object.getMesh());
+loaded = 1;
+    });
+
+    //object.useStaticTexture();
+
+
+  }
+};
+oReq.open("GET", "elephant_scorpion.yxv", true);
+oReq.send();
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(75, 640/480, 0.1, 1000);
+
+var renderer = new THREE.WebGLRenderer();
+renderer.setSize(640, 480);
+renderer.setDepthTest(true);
+renderer.setDepthWrite(true);
+
+var container = document.getElementById('container');
+container.appendChild(renderer.domElement);
+
+var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+directionalLight.position.set( 0, 0, 1 );
+scene.add(directionalLight);
+
+//scene.add(new THREE.AmbientLight( 0xdddddd));
+
+var geometry = new THREE.CubeGeometry(1,1,1);
+var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
+
+//var cube = new THREE.Mesh(geometry, material);
+camera.position.z = 1.5;
+
+//scene.add(cube);
+
+var render = function () {
+  requestAnimationFrame(render);
+
+  if (object) {
+    object.mesh.rotation.x = Math.PI;
+    object.mesh.rotation.y += 0.02;
+  //  cube.material = object.mesh.material;
+
+    if (loaded) {
+       object.setLutCoeffs();
+    } 
+  }
+
+  renderer.render(scene, camera);
+};
+
+render();
+</script>
+</body>
+</html>
