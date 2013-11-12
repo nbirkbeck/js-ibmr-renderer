@@ -126,10 +126,46 @@ YxvFileReader.prototype.handleLutb_ = function(block, byteArray, offset) {
     var basisIndex = this.getInteger_(byteArray, offset + 8);
     var numBasis  = this.getInteger_(byteArray, offset + 12);
     
-
     // The rest of the data is just stored in the array.
     var dataView =new Int8Array(byteArray.buffer, offset + 16, block.length - 16);
     this.objects[objectIndex].setLookupTable(channel, basisIndex, numBasis, dataView);
+    return true;
+};
+
+
+/**
+ * Handle the LUTJ tag (binary look-up tables).
+ *
+ * @param {!YxvFileReader.BlockHeader} block The parsed block header.
+ * @param {!Uint8Array} byteArray The byte array.
+ * @param {number} offset The current offset.
+ * @return {boolean}
+ * @private
+ */
+YxvFileReader.prototype.handleLutj_ = function(block, byteArray, offset) {
+    var objectIndex = this.getInteger_(byteArray, offset);
+    var channel = this.getInteger_(byteArray, offset + 4);
+    var basisIndex = this.getInteger_(byteArray, offset + 8);
+    var numBasis  = this.getInteger_(byteArray, offset + 12);
+    offset += 16;
+
+    var dataView = new Uint8Array(byteArray.buffer, offset, block.length - 16);
+    var segments = this.getJpegSegments_(dataView);
+    if (segments.length != (numBasis + 1)) {
+	this.error_('Wrong number of segments in LUTJ tag.' + segments.length + ' ' + (numBasis + 1) + ' ' + block.length);
+	return false;
+    }
+
+    var lutTextureBlobs = [];
+    var object = this.objects[objectIndex];
+    for (var i = 0; i < segments.length - 1; ++i) {
+	var imageView = new Uint8Array(byteArray.buffer, offset + segments[i], 
+				       segments[i + 1] - segments[i]);
+	lutTextureBlobs[i] = new Blob([imageView], {type: 'image/jpeg'});
+    }
+
+    this.objects[objectIndex].lutTextureBlobs = lutTextureBlobs;
+    this.objects[objectIndex].setLookupTableBlobs(channel, basisIndex, lutTextureBlobs);
     return true;
 };
 
@@ -207,6 +243,64 @@ YxvFileReader.prototype.handleEulerAngles_ = function(block, byteArray, offset) 
     console.log(axis);
     return true;
 };
+
+
+/**
+ * Handle the GEOA tag (binary geometry).
+ *
+ * @param {!YxvFileReader.BlockHeader} block The parsed block header.
+ * @param {!Uint8Array} byteArray The byte array.
+ * @param {number} offset The current offset.
+ * @return {boolean}
+ * @private
+ */
+YxvFileReader.prototype.handleGeoa_ = function(block, byteArray, offset) {
+    var objectIndex = this.getInteger_(byteArray, offset);
+    offset += 4;
+
+    var str = '';
+    for (var i = 0; i < block.length; ++i) {
+	str += String.fromCharCode(byteArray[offset + i]);
+    }
+    var lines = str.split('\n');
+    var numVert = parseInt(lines[0]);
+
+    var geometry = new THREE.Geometry();
+    geometry.vertices.length = numVert;
+    for (var i = 1; i <= numVert; ++i) {
+	var v = lines[i].split(' ');
+	geometry.vertices[i - 1] = new THREE.Vector3(parseFloat(v[0]), 
+						     parseFloat(v[1]), 
+						     parseFloat(v[2]));
+    }
+    var numTexVert = parseInt(lines[numVert + 1]);
+    lines = lines.slice(numVert + 2);
+    var texVert = [];
+    texVert.length = numTexVert;
+    for (var i = 0; i < numTexVert; ++i) {
+	var v = lines[i].split(' ');
+	texVert[i] = new THREE.Vector2(parseFloat(v[0]), 
+				       1.0 - parseFloat(v[1]));
+    }
+
+    var numFaces = parseInt(lines[numTexVert]);
+    lines = lines.slice(numTexVert + 1);
+    for (var i = 0; i < numFaces; ++i) {
+	var v = lines[i].split(' ');
+	var v1 = parseInt(v[0]);
+	var v2 = parseInt(v[1]);
+	var v3 = parseInt(v[2]);
+	geometry.faces[i] = new THREE.Face3(v1, v2, v3);
+
+	var uvs = [texVert[v1], texVert[v2], texVert[v3]];
+	geometry.faceVertexUvs[0][i] = uvs;
+    }
+
+    geometry.computeFaceNormals();
+    geometry.computeVertexNormals();
+    this.objects[objectIndex].setGeometry(geometry);
+};
+
 
 
 /**
@@ -430,11 +524,13 @@ YxvFileReader.TAGS_ = {
     'POBJ': YxvFileReader.prototype.handlePcaObject_,
     'LUTR': YxvFileReader.prototype.handleLutRange_,
     'LUTB': YxvFileReader.prototype.handleLutb_,
+    'LUTJ': YxvFileReader.prototype.handleLutj_,
     'STAJ': YxvFileReader.prototype.handleStaj_,
     'EUA ': YxvFileReader.prototype.handleEulerAngles_,
     'POS ': YxvFileReader.prototype.handlePos_,
     'ROT ': YxvFileReader.prototype.handleRot_,
     'SCA ': YxvFileReader.prototype.handleSca_,
     'GEOB': YxvFileReader.prototype.handleGeob_,
+    'GEOA': YxvFileReader.prototype.handleGeoa_,
     'BASJ': YxvFileReader.prototype.handleBasj_
 };

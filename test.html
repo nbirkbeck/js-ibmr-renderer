@@ -5,10 +5,8 @@
 
 <script id="vertexShader" type="x-shader/x-vertex">
 varying vec2 vUv;
-
 void main() {
   vUv = uv;
-
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }
 </script>
@@ -119,7 +117,7 @@ oReq.onload = function (oEvent) {
     object = reader.objects[0];
 
     object.loadBasisImages(function(urls) {
-      //image.setAttribute('src', URL.createObjectURL(blob));
+      //image.setAttribute('src', URL.createObjectURL(object.lutTextureBlobs[0]));
       //image.setAttribute('src', urls[0]);
 
       var vertShader = document.getElementById('vertexShader');
@@ -131,11 +129,11 @@ loaded = 1;
     });
 
     //object.useStaticTexture();
-
-
   }
 };
-oReq.open("GET", "elephant_scorpion.yxv", true);
+oReq.open("GET", "houseSFS.yxv", true);
+//oReq.open("GET", "Guba.yxv", true);
+//oReq.open("GET", "quack.yxv", true);
 oReq.send();
 
 var scene = new THREE.Scene();

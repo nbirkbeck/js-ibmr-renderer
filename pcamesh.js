@@ -192,6 +192,7 @@ PcaMesh.prototype.setLutCoeffs = function() {
 				this.lut_[i][j][lutMax] * a);
 	}
     }
+
     if (this.mesh.material && this.mesh.material.uniforms) {
 	this.uniforms['coeffY'].value = this.coeff[0];
 	this.uniforms['coeffU'].value = this.coeff[1];
@@ -278,7 +279,6 @@ PcaMesh.prototype.setBasis = function(channel, basisIndex, blobs) {
  * @return {number}
  */
 PcaMesh.prototype.getNumBasis = function(channel) {
-    console.log(channel);
     return this.basis_[channel].length;
 };
 
@@ -334,7 +334,7 @@ PcaMesh.prototype.loadBasisImages = function(callback) {
 	    var image = new Image();
 	    image.onload = function() {
 		loaded++;
-		console.log('Loaded:' + loaded);
+
 		if (loaded == totalImages) {
 		    var urls = pcaMesh.packTextures();
 		    callback(urls);
@@ -388,7 +388,7 @@ PcaMesh.prototype.packTextures = function() {
                     this.basisDesc_[i][0], this.basisDesc_[i][1]);
 		var sepPixels = imageData.data;
 		var mergedPixels = mergedData.data;
-		var length = sepPixels.length * 4;
+		var length = sepPixels.length;
 		for (var z = 0; z < length; z += 4) {
 		    mergedPixels[z + k] = sepPixels[z];
 		}
@@ -426,8 +426,6 @@ PcaMesh.prototype.setLookupTable = function(channel, basis, numBasis,
 	    this.lut_[channel][0][i] = 1.0;
 	}
     }
-    console.log(byteArray[0]);
-    console.log(byteArray[0] - 128);
 
     for (var b = 0; b < numBasis; ++b) {
 	var basisIndex = basis + b + 1;
@@ -435,5 +433,42 @@ PcaMesh.prototype.setLookupTable = function(channel, basis, numBasis,
 	    this.lut_[channel][basisIndex][i] = 
 		(byteArray[b * lutWidth * lutHeight + i])/128.0;
 	}
+    }
+};
+
+
+PcaMesh.prototype.setLookupTableBlobs = function(channel, basisIndex, blobs) {
+    var lutDesc = this.lutDesc_;
+    var pcaMesh = this;
+    var numLoaded = 0;
+
+    // TODO: Fix up this so that it uses only one canvas.
+    var render = function(image, i) {
+	return function() {
+	    var canvas = document.createElement('canvas');
+	    canvas.width = lutDesc[channel][0];
+	    canvas.height = lutDesc[channel][1];
+	    var ctx = canvas.getContext('2d');
+
+	    ctx.clearRect(0, 0, lutDesc[channel][0], lutDesc[channel][1]);
+	    ctx.drawImage(image, 0, 0, lutDesc[channel][0], lutDesc[channel][1]);
+
+	    var imageData = ctx.getImageData(0, 0, lutDesc[channel][0], 
+                lutDesc[channel][1]);
+	    var pixels = imageData.data;
+	    var byteData = new Int8Array(canvas.width * canvas.height);
+	    var numPixels = pixels.length / 4;
+	    for (var j = 0; j < numPixels; ++j) {
+		byteData[j] = pixels[4 * j + 1] - 128;
+	    }
+	    pcaMesh.setLookupTable(channel, basisIndex + i, 1, byteData);
+	}
+    };
+
+    for (var i = 0; i < blobs.length; ++i) {
+	var image = new Image();
+	image.onload = render(image, i);
+
+	image.setAttribute('src', URL.createObjectURL(blobs[i]));
     }
 };
