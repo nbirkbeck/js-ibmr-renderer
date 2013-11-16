@@ -1,4 +1,4 @@
-//goog.provide('ibmr.PcaMesh');
+goog.provide('PcaMesh');
 
 
 /** 
@@ -173,20 +173,29 @@ PcaMesh.prototype.useStaticTexture = function() {
  * TODO(birkbeck): Make this use the camera position as well.
  */
 PcaMesh.prototype.setLutCoeffs = function() {
-    var roty = -this.mesh.rotation.y + Math.PI;
+    var roty = (-this.mesh.rotation.y + Math.PI) * 180.0 / Math.PI;
+
     while (roty < 0) {
-	roty += 2.0 * Math.PI;
+	roty += 360.0;
     }
-    while (roty > 2.0 * Math.PI) {
-	roty -= 2.0 * Math.PI;
+    while (roty > 360) {
+	roty -= 360.0;
     }
 
     this.coeff = [[], [], []];
+
     for (var i = 0; i < this.getNumChannels(); ++i) {
-	var lutCoord = this.lutDesc_[i][0] * (roty / (2.0 * Math.PI));
+	var lutCoord = this.lutDesc_[i][0] * (roty - this.lutRangeMin_[i]) 
+	    / (this.lutRangeMax_[i] - this.lutRangeMin_[i]) + 0.5;
 	var lutMin = Math.max(0, Math.floor(lutCoord));
 	var lutMax = Math.min(this.lutDesc_[i][0] - 1, Math.floor(lutCoord) + 1);
 	var a = lutCoord - lutMin;
+
+	if (lutMin == lutMax && lutMin == (this.lutDesc_[i][0] - 1)) {
+	    console.log('Wrap around');
+	    ///a = (lutCoord - lutMin) / (this.lutRangeMin_[i] + 360 - this.lutRangeMax_[i]);
+	    //lutMax = 0;
+	}
 	for (var j = 0; j < 16; ++j) {
 	    this.coeff[i][j] = (this.lut_[i][j][lutMin] * (1.0 - a) + 
 				this.lut_[i][j][lutMax] * a);
@@ -197,6 +206,15 @@ PcaMesh.prototype.setLutCoeffs = function() {
 	this.uniforms['coeffY'].value = this.coeff[0];
 	this.uniforms['coeffU'].value = this.coeff[1];
 	this.uniforms['coeffV'].value = this.coeff[2];
+	
+	if (!this.j) {
+	    this.j = 1;
+	}
+	this.j += 1;
+	if (this.j == 30) {
+	    this.j = 0;
+	    console.log(this.coeff);
+	}
     }
 };
 
@@ -365,8 +383,8 @@ PcaMesh.prototype.packTextures = function() {
     var ctx = canvas.getContext('2d');
     var sepCtx = sepCanvas.getContext('2d');
 
-    document.body.appendChild(canvas);
-    document.body.appendChild(sepCanvas);
+    //document.body.appendChild(canvas);
+    //document.body.appendChild(sepCanvas);
 
     var urls = [];
     this.textures_ = [];
@@ -375,8 +393,7 @@ PcaMesh.prototype.packTextures = function() {
 	for (var j = 0; j < this.getNumBasis(i); j += 4) {
 	    ctx.clearRect(0, 0, this.basisDesc_[i][0], this.basisDesc_[i][1]);
 
-	    var mergedData = ctx.getImageData(0, 0, this.basisDesc_[i][0], 
-                this.basisDesc_[i][1]);
+	    var mergedData = ctx.getImageData(0, 0, this.basisDesc_[i][0], this.basisDesc_[i][1]);
 	    
 	    for (var k = 0; k < 4; ++k) {
 		sepCtx.clearRect(0, 0, this.basisDesc_[i][0], 
@@ -389,6 +406,7 @@ PcaMesh.prototype.packTextures = function() {
 		var sepPixels = imageData.data;
 		var mergedPixels = mergedData.data;
 		var length = sepPixels.length;
+
 		for (var z = 0; z < length; z += 4) {
 		    mergedPixels[z + k] = sepPixels[z];
 		}

@@ -1,8 +1,10 @@
 <html>
 <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r61/three.js"> </script>
+<!--
 <script src="pcamesh.js"> </script>
 <script src="reader.js"> </script>
-
+-->
+<script src="output.js"> </script>
 <script id="vertexShader" type="x-shader/x-vertex">
 varying vec2 vUv;
 void main() {
@@ -82,102 +84,33 @@ canvas {
 
 </style>
 <body>
-test2.
+<span>
+Choose model:
+</span>
+<select id='select'>
+  <option value='houseSFS.yxv'>House</option>
+  <option value='elephant_scorpion.yxv'>Elephant</option>
+  <option value='Guba.yxv'>Guba</option>
+</select>
 <img src='' id='image' />
-<div class='container' id='container'>
-</div>
+<div class='container' id='container'></div>
 <script>
-var object;
-var image = document.getElementById('image');
-var oReq = new XMLHttpRequest();
-var loaded = 0;
 
-oReq.responseType = "arraybuffer";
-console.log('Sending request');
-console.log(oReq);
+var main = new renderer.Main();
 
-image.onload = function () {
-  console.log('Loading image');
-};
-oReq.onerror = function (oEvent) {
-  console.log('error');
-};
-oReq.onabort = function (oEvent) {
-  console.log('error');
-};
-oReq.onload = function (oEvent) {
-  var arrayBuffer = oReq.response;
-  if (arrayBuffer) {
-    var byteArray = new Uint8Array(arrayBuffer);
-    var reader = new YxvFileReader();
-    console.log(reader);
-    reader.read(byteArray);
-
-    var blob = reader.objects[0].getBasis(1)[0]; 
-    object = reader.objects[0];
-
-    object.loadBasisImages(function(urls) {
-      //image.setAttribute('src', URL.createObjectURL(object.lutTextureBlobs[0]));
-      //image.setAttribute('src', urls[0]);
-
-      var vertShader = document.getElementById('vertexShader');
-      var fragShader = document.getElementById('fragmentShader');
-
-      object.setShaders(vertShader.innerHTML, fragShader.innerHTML);
-      scene.add(object.getMesh());
-loaded = 1;
-    });
-
-    //object.useStaticTexture();
-  }
-};
-oReq.open("GET", "houseSFS.yxv", true);
-//oReq.open("GET", "Guba.yxv", true);
-//oReq.open("GET", "quack.yxv", true);
-oReq.send();
-
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, 640/480, 0.1, 1000);
-
-var renderer = new THREE.WebGLRenderer();
-renderer.setSize(640, 480);
-renderer.setDepthTest(true);
-renderer.setDepthWrite(true);
-
-var container = document.getElementById('container');
-container.appendChild(renderer.domElement);
-
-var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-directionalLight.position.set( 0, 0, 1 );
-scene.add(directionalLight);
-
-//scene.add(new THREE.AmbientLight( 0xdddddd));
-
-var geometry = new THREE.CubeGeometry(1,1,1);
-var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
-
-//var cube = new THREE.Mesh(geometry, material);
-camera.position.z = 1.5;
-
-//scene.add(cube);
-
-var render = function () {
-  requestAnimationFrame(render);
-
-  if (object) {
-    object.mesh.rotation.x = Math.PI;
-    object.mesh.rotation.y += 0.02;
-  //  cube.material = object.mesh.material;
-
-    if (loaded) {
-       object.setLutCoeffs();
-    } 
-  }
-
-  renderer.render(scene, camera);
+// Setup the selection.
+var select = document.getElementById('select');
+select.onchange = function() {
+  main.removeAllObjects();
+  main.loadModel(select.value, function() {
+    console.log('Loaded');
+  }, function() {
+    console.error('Error loading');
+  });
 };
 
-render();
+main.run();
+
 </script>
 </body>
 </html>

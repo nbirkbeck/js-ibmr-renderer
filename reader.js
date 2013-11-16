@@ -1,3 +1,6 @@
+goog.provide('YxvFileReader');
+
+goog.require('goog.dom');
 
 
 YxvFileReader = function() {
@@ -6,6 +9,12 @@ YxvFileReader = function() {
      */
     this.objects = [];
 };
+
+
+/**
+ * type {Array.<!PcaMesh>}
+ */
+//YxvFileReader.prototype.objects = [];
 
 
 /** 
