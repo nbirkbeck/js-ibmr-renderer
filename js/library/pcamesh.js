@@ -1,22 +1,9 @@
 goog.provide('PcaMesh');
-goog.require('MultipleTexturesRenderer');
 
-
-/** 
- * Size and num basis elements for each channel.
- *
- * @typedef {!Array.<Array.<number>>}
- */
-var LutDesc;
-
-
-/** 
- * Size and num basis elements for each channel.
- *
- * @typedef {!Array.<Array.<number>>}
- */
-var BasisDesc;
-
+goog.require('types');
+goog.require('renderer.MultipleTexturesRenderer');
+goog.require('renderer.BigTextureRenderer');
+goog.require('renderer.BaseRenderer');
 
 
 /**
@@ -87,8 +74,11 @@ PcaMesh = function(id, basisDesc, lutDesc) {
     }
 
     // Setup the default renderer.
-    this.renderer_ = new MultipleTexturesRenderer();
-
+    /*    this.renderer_ = new renderer.MultipleTexturesRenderer('shaders/multiple_textures.vsh',
+        'shaders/multiple_textures.fsh');
+    */
+    this.renderer_ = new renderer.BigTextureRenderer('shaders/multiple_textures.vsh',
+        'shaders/packed_texture.fsh');
     // Setup the default material.
     this.mesh.material = new THREE.MeshLambertMaterial({color: 0xffffff});
 };
@@ -214,7 +204,7 @@ PcaMesh.prototype.setLutCoeffs = function() {
 	    a = (lutCoord - lutMin) / (this.lutRangeMin_[0] + 360 - this.lutRangeMax_[0]);
 	    //lutMax = 0;
 	}
-	for (var j = 0; j < 16; ++j) {
+	for (var j = 0; j < this.basisDesc_[i][2]; ++j) {
 	    this.coeff[i][j] = (this.lut_[i][j][lutMin] * (1.0 - a) + 
 				this.lut_[i][j][lutMax] * a);
 	}
@@ -227,16 +217,12 @@ PcaMesh.prototype.setLutCoeffs = function() {
 
 
 /**
- * Set the shaders used to render.
- * This also sets up the material that uses the basis for rendering.
- *
- * @param {string} vertShader The vertex shader source.
- * @param {string} fragShader The fragment shader source.
+ * Init the shader material.
  */
-PcaMesh.prototype.setShaders = function(vertShader, fragShader) {
+PcaMesh.prototype.initShaderMaterial = function() {
     this.setLutCoeffs();
 
-    this.renderer_.setShaders(vertShader, fragShader, this.coeff);
+    this.renderer_.initMaterial(this.coeff);
 
     this.mesh.material = this.renderer_.material;
 };
@@ -316,6 +302,7 @@ PcaMesh.prototype.getMesh = function() {
  * @param {function()} callback Callback when loading is complete.
  */
 PcaMesh.prototype.loadBasisImages = function(callback) {
+    console.log('Load basis images');
     var loaded = 0;
     var totalImages = 0;
     for (var i = 0; i < this.getNumChannels(); ++i) {

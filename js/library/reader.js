@@ -4,11 +4,6 @@ goog.require('goog.dom');
 
 
 YxvFileReader = function() {
-    /**
-     * @type {Array.<!PcaMesh>}
-     */
-    this.objects = [];
-
     this.version = 0;
 };
 
@@ -16,7 +11,7 @@ YxvFileReader = function() {
 /**
  * type {Array.<!PcaMesh>}
  */
-//YxvFileReader.prototype.objects = [];
+YxvFileReader.prototype.objects = [];
 
 
 /** 
@@ -131,6 +126,7 @@ YxvFileReader.prototype.handleStaj_ = function(block, byteArray, offset) {
     var height = this.getInteger_(byteArray, offset + 8);
     var dataView = new Uint8Array(byteArray.buffer, offset + 12, block.length - 12);
     var blob = new Blob([dataView], {type: 'image/jpeg'});
+
     this.objects[objectIndex].setStaticTexture(blob);
     return true;
 };
@@ -161,7 +157,7 @@ YxvFileReader.prototype.handleLutb_ = function(block, byteArray, offset) {
 /**
  * Handle the LUTJ tag (binary look-up tables).
  *
- * @param {!YxvFileReader.BlockHeader} block The parsed block header.
+ * @param {!FileReader.BlockHeader} block The parsed block header.
  * @param {!Uint8Array} byteArray The byte array.
  * @param {number} offset The current offset.
  * @return {boolean}

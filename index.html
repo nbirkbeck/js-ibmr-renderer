@@ -35,16 +35,19 @@ Static texture:
 
 <span>Shaded:</span> <input type='checkbox' id='shaded'/>
 
+<span>Freeze:</span> <input type='checkbox' id='freeze'/>
+
 <img src='' id='image' />
  <div class='container' id='container'></div>
 <script>
 
-var main = new renderer.Main();
+var main = new ammi.Main();
 
 // Setup the selection.
 var select = document.getElementById('select');
 var static = document.getElementById('static');
 var shaded = document.getElementById('shaded');
+var freeze = document.getElementById('freeze');
 
 select.onchange = function() {
   main.removeAllObjects();
@@ -67,6 +70,10 @@ shaded.onchange = function() {
     main.setUseStaticTexture(static.checked);
   } 
 };
+
+freeze.onchange = function() {
+   main.setFreeze(freeze.checked);
+}
 
 main.run();
 

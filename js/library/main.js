@@ -3,24 +3,25 @@ goog.provide('Main');
 goog.require('YxvFileReader');
 goog.require('PcaMesh');
 
+
+
+/**
+ * Main YXV renderer application.
+ *
+ * @constructor
+ */
 Main = function() {
-    this.vertexShader = '';
-    this.fragmentShader = '';
+    /** @private {boolean} */
+    this.freeze_ = false;
 
-    jQuery.get('shaders/multiple_textures.vsh', undefined, 
-	       goog.bind(function(data, textStatus) {
-		       this.setVertexShader_(data);
-		   }, this));
-
-    jQuery.get('shaders/multiple_textures.fsh', undefined, 
-	       goog.bind(function(data, textStatus) {
-		       this.setFragmentShader_(data);
-		   }, this));
-
+    /** @type {!THREE.Scene} */
     this.scene = new THREE.Scene();
+
+    /** @type {!THREE.PerspectiveCamera} */
     this.camera = new THREE.PerspectiveCamera(75, 640/480, 0.1, 1000);
     this.camera.position.z = 1.5;
 
+    /** @type {!THREE.WebGLRenderer} */
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(640, 480);
     this.renderer.setDepthTest(true);
@@ -68,7 +69,10 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
   oReq.onload = goog.bind(function (oEvent) {
     var arrayBuffer = oReq.response;
     if (arrayBuffer) {
-	this.onLoadModel_(arrayBuffer);
+	if (!this.onLoadModel_(arrayBuffer)) {
+	    console.error('Error loading model');
+	    onError(oEvent);
+	}
     } else {
 	onError(oEvent);
     }
@@ -79,20 +83,11 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
 };
 
 
+/**
+ * Run the main application.
+ */
 Main.prototype.run = function() {
     this.render();
-};
-
-
-/** @private */
-Main.prototype.setVertexShader_ = function(data) {
-    this.vertexShader = data;
-};
-
-
-/** @private */
-Main.prototype.setFragmentShader_ = function(data) {
-    this.fragmentShader = data;
 };
 
 
@@ -134,25 +129,34 @@ Main.prototype.render = function () {
     if (this.object) {
 	this.object.mesh.rotation.x = Math.PI;
 	this.object.mesh.rotation.y += 0.02;
-	//  cube.material = object.mesh.material;
-	this.object.setLutCoeffs();
+	if (!this.freeze_) {
+	    this.object.setLutCoeffs();
+	}
     }
-    
     this.renderer.render(this.scene, this.camera);
 };
 
 
 /**
+ * @type {boolean} freeze
+ */
+Main.prototype.setFreeze = function(freeze) {
+    this.freeze_ = freeze;
+};
+
+
+/**
+ * Callback function when the loading of the model is complete.
+ *
  * @private
  */
 Main.prototype.onLoadModel_ = function(arrayBuffer) {
     var byteArray = new Uint8Array(arrayBuffer);
     var reader = new YxvFileReader();
 
-    reader.read(byteArray);
-    
-    console.log(reader);
-    console.log(reader.objects);
+    if (!reader.read(byteArray)) {
+	return false;
+    }
 
     var blob = reader.objects[0].getBasis(1)[0]; 
     this.object = reader.objects[0];
@@ -160,7 +164,7 @@ Main.prototype.onLoadModel_ = function(arrayBuffer) {
     this.object.loadBasisImages(goog.bind(function(urls) {
 	//image.setAttribute('src', URL.createObjectURL(object.lutTextureBlobs[0]));
 	//image.setAttribute('src', urls[0]);
-        this.object.setShaders(this.vertexShader, this.fragmentShader);
+	this.object.initShaderMaterial();
 	this.scene.add(this.object.getMesh());
     }, this));
 };

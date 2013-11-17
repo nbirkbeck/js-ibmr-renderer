@@ -1,18 +1,27 @@
-goog.provide('MultipleTexturesRenderer');
+goog.provide('renderer.MultipleTexturesRenderer');
+
+goog.require('renderer.BaseRenderer');
 
 
-MultipleTexturesRenderer = function() { 
+
+/**
+ * A renderer that uses a single texture for each 4 basis images.
+ *
+ * @param {string} vertShaderUrl
+ * @param {string} fragShaderUrl
+ * @extends {renderer.BaseRenderer}
+ * @constructor
+ */
+renderer.MultipleTexturesRenderer = function(vertShaderUrl, fragShaderUrl) { 
+    goog.base(this, vertShaderUrl, fragShaderUrl);
+
     this.textures_ = [];
 };
+goog.inherits(renderer.MultipleTexturesRenderer, renderer.BaseRenderer);
 
 
-MultipleTexturesRenderer.prototype.setShaders = function(vertShader, fragShader, coeff) {
-    // The colorspace matrix.
-    var yuvToRgb = new THREE.Matrix4(1 , 0 , 1 , 0,
-				     1,  0 , 0 , 0,
-				     1 , 1 , 0 , 0,
-				     0 , 0 , 0 , 1);
-
+/** @override */
+renderer.MultipleTexturesRenderer.prototype.initMaterial = function(coeff) {
     this.uniforms = {
         'textureY0': {type: 't', value: this.textures_[0][0]},
 	'textureY1': {type: 't', value: this.textures_[0][1]},
@@ -29,19 +38,22 @@ MultipleTexturesRenderer.prototype.setShaders = function(vertShader, fragShader,
 	'coeffY': {type: 'fv1', value: coeff[0]},
 	'coeffU': {type: 'fv1', value: coeff[1]},
 	'coeffV': {type: 'fv1', value: coeff[2]},
-	'colorMatrix': {type: 'm4', value: yuvToRgb}
+	'colorMatrix': {type: 'm4', value: renderer.yuvToRgb}
     };
 
     this.material = new THREE.ShaderMaterial({
-	fragmentShader: fragShader,
-	vertexShader: vertShader,
+	fragmentShader: this.fragmentShader,
+	vertexShader: this.vertexShader,
 	uniforms: this.uniforms,
 	color: 0xffffff
     });
 };
 
 
-MultipleTexturesRenderer.prototype.setCoeff = function(coeff) {
+/** @override */
+renderer.MultipleTexturesRenderer.prototype.setCoeff = function(coeff) {
+    goog.base(this, 'setCoeff', coeff);
+
     if (this.uniforms) {
 	this.uniforms['coeffY'].value = coeff[0];
 	this.uniforms['coeffU'].value = coeff[1];
@@ -53,9 +65,10 @@ MultipleTexturesRenderer.prototype.setCoeff = function(coeff) {
 /**
  * Pack all the basis images into textures.
  *
- * @return {!Array.<string>}
+ * @return {!Array.<!Image>}
  */
-MultipleTexturesRenderer.prototype.initFromTextures = function(basisDesc, basisImages) {
+renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(basisDesc, basisImages) {
+    console.log('Init from textures');
     var canvas = document.createElement('canvas');
     canvas.width = basisDesc[0][0]
     canvas.height = basisDesc[0][1];
