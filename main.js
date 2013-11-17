@@ -18,15 +18,9 @@ Main = function() {
     var container = document.getElementById('container');
     container.appendChild(this.renderer.domElement);
     
-    var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5 );
-    directionalLight.position.set( 0, 0, 1 );
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    directionalLight.position.set(0, 0, 1);
     this.scene.add(directionalLight);
-    
-    var geometry = new THREE.CubeGeometry(1,1,1);
-    var material = new THREE.MeshLambertMaterial({color: 0x00ff00});
-    
-    //var cube = new THREE.Mesh(geometry, material);
-
 };
 
 
@@ -54,14 +48,14 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
   oReq.responseType = "arraybuffer";
 
   oReq.onerror = function (oEvent) {
-      console.log('error');
+      console.error('error');
       if (oEvent) {
 	  onError(oEvent);
       }
   }; 
 
   oReq.onabort = function (oEvent) {
-      console.log('error');
+      console.error('error');
       if (oEvent) {
 	  onError(oEvent);
       }
@@ -73,7 +67,6 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
     } else {
 	onError(oEvent);
     }
-    //object.useStaticTexture();
   }, this);
 
   oReq.open("GET", modelFile, true);
@@ -98,6 +91,24 @@ Main.prototype.removeAllObjects = function() {
 
 
 /**
+ * Set use the static texture.
+ * @param {boolean} value Enable the static texture.
+ */
+Main.prototype.setUseStaticTexture = function (value) {
+    this.object.setUseStaticTexture(value);
+};
+
+
+/**
+ * Set use the shaded material.
+ * @param {boolean} value Use the shaded material.
+ */
+Main.prototype.useShadedMaterial = function (value) {
+    this.object.useShadedMaterial();
+};
+
+
+/**
  * Render the scene.
  */
 Main.prototype.render = function () {
@@ -107,7 +118,6 @@ Main.prototype.render = function () {
 	this.object.mesh.rotation.x = Math.PI;
 	this.object.mesh.rotation.y += 0.02;
 	//  cube.material = object.mesh.material;
-	
 	this.object.setLutCoeffs();
     }
     

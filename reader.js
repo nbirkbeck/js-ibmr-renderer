@@ -8,6 +8,8 @@ YxvFileReader = function() {
      * @type {Array.<!PcaMesh>}
      */
     this.objects = [];
+
+    this.version = 0;
 };
 
 
@@ -75,6 +77,20 @@ YxvFileReader.prototype.handlePcaObject_ = function(block, byteArray, offset) {
     }
 
     this.objects[objectId] = new PcaMesh(objectId, basisSizes, lutSizes);
+};
+
+
+/**
+ * Handle the version number.
+ *
+ * @param {!YxvFileReader.BlockHeader} block The parsed block header.
+ * @param {!Uint8Array} byteArray The byte array.
+ * @param {number} offset The current offset.
+ * @return {boolean}
+ * @private
+ */
+YxvFileReader.prototype.handleVers_ = function(block, byteArray, offset) {
+    this.version = this.getInteger_(byteArray, offset);
 };
 
 
@@ -343,8 +359,9 @@ YxvFileReader.prototype.handleGeob_ = function(block, byteArray, offset) {
     var geometry = new THREE.Geometry();
     geometry.vertices.length = numVert;
     for (var i = 0; i < numVert; ++i) {
-	geometry.vertices[i] = new THREE.Vector3(vert[3 * i], vert[3 * i + 1], 
-            vert[3 * i + 2]);
+	geometry.vertices[i] = new THREE.Vector3(vert[3 * i], 
+						 this.version == 0 ? vert[3 * i + 1] : - vert[3 * i + 1], 
+						 vert[3 * i + 2]);
     }
 
     geometry.faces.length = numTris;
@@ -481,7 +498,7 @@ YxvFileReader.prototype.getIntegers_ = function(byteArray, i, num) {
  * @return {number}
  */
 YxvFileReader.prototype.getFloat_ = function(byteArray, i) {
-    return new Float32Array(byteArray.buffer, i, 1)[0];
+    return this.getFloats_(byteArray, i, 1)[0];
 };
 
 
@@ -495,7 +512,16 @@ YxvFileReader.prototype.getFloat_ = function(byteArray, i) {
  * @private
  */
 YxvFileReader.prototype.getFloats_ = function(byteArray, i, num) {
-    return new Float32Array(byteArray.buffer, i, num);
+    try {
+	return new Float32Array(byteArray.buffer, i, num);
+    } catch (err) {
+	var dataView = new DataView(byteArray.buffer);
+	var floatView = new Float32Array(num);
+	for (var j = 0; j < num; ++j) {
+	    floatView[j] = dataView.getFloat32(j * 4 + i);
+	}
+	return floatView;
+    }
 };
 
 
@@ -509,7 +535,16 @@ YxvFileReader.prototype.getFloats_ = function(byteArray, i, num) {
  * @private
  */
 YxvFileReader.prototype.getDoubles_ = function(byteArray, i, num) {
-    return new Float64Array(byteArray.buffer, i, num);
+    try {
+	return new Float64Array(byteArray.buffer, i, num);
+    } catch (err) {
+	var dataView = new DataView(byteArray.buffer);
+	var floatView = new Float64Array(num);
+	for (var j = 0; j < num; ++j) {
+	    floatView[j] = dataView.getFloat32(j * 8 + i);
+	}
+	return floatView;
+    }
 };
 
 
@@ -531,6 +566,7 @@ YxvFileReader.prototype.error_ = function(msg) {
  */
 YxvFileReader.TAGS_ = {
     'POBJ': YxvFileReader.prototype.handlePcaObject_,
+    'VERS': YxvFileReader.prototype.handleVers_,
     'LUTR': YxvFileReader.prototype.handleLutRange_,
     'LUTB': YxvFileReader.prototype.handleLutb_,
     'LUTJ': YxvFileReader.prototype.handleLutj_,

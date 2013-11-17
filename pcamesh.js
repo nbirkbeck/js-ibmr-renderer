@@ -158,12 +158,26 @@ PcaMesh.prototype.setLutRange = function(mean, min, max) {
 
 /** 
  * Set the objects material to use the static texture.
+ *
+ * @param {boolean} staticTexture
  */
-PcaMesh.prototype.useStaticTexture = function() {
-    var pcaMesh = this;
-    var url = URL.createObjectURL(this.staticTexture_);
-    var texture = THREE.ImageUtils.loadTexture(url, new THREE.UVMapping());
-    var matParams = {color: 0xffffff, map: texture};
+PcaMesh.prototype.setUseStaticTexture = function(staticTexture) {
+    if (staticTexture) {
+	var url = URL.createObjectURL(this.staticTexture_);
+	var texture = THREE.ImageUtils.loadTexture(url, new THREE.UVMapping());
+	var matParams = {color: 0xffffff, map: texture};
+	this.mesh.material = new THREE.MeshLambertMaterial(matParams);
+    } else {
+	this.mesh.material = this.shaderMaterial;
+    }
+};
+
+
+/** 
+ * Set use shaded material.
+ */
+PcaMesh.prototype.useShadedMaterial = function() {
+    var matParams = {color: 0xffffff};
     this.mesh.material = new THREE.MeshLambertMaterial(matParams);
 };
 
@@ -185,15 +199,15 @@ PcaMesh.prototype.setLutCoeffs = function() {
     this.coeff = [[], [], []];
 
     for (var i = 0; i < this.getNumChannels(); ++i) {
-	var lutCoord = this.lutDesc_[i][0] * (roty - this.lutRangeMin_[i]) 
-	    / (this.lutRangeMax_[i] - this.lutRangeMin_[i]) + 0.5;
+	var lutCoord = this.lutDesc_[i][0] * (roty - this.lutRangeMin_[0]) 
+	    / (this.lutRangeMax_[0] - this.lutRangeMin_[0]) + 0.5;
 	var lutMin = Math.max(0, Math.floor(lutCoord));
 	var lutMax = Math.min(this.lutDesc_[i][0] - 1, Math.floor(lutCoord) + 1);
 	var a = lutCoord - lutMin;
 
 	if (lutMin == lutMax && lutMin == (this.lutDesc_[i][0] - 1)) {
 	    console.log('Wrap around');
-	    ///a = (lutCoord - lutMin) / (this.lutRangeMin_[i] + 360 - this.lutRangeMax_[i]);
+	    a = (lutCoord - lutMin) / (this.lutRangeMin_[0] + 360 - this.lutRangeMax_[0]);
 	    //lutMax = 0;
 	}
 	for (var j = 0; j < 16; ++j) {
@@ -206,15 +220,6 @@ PcaMesh.prototype.setLutCoeffs = function() {
 	this.uniforms['coeffY'].value = this.coeff[0];
 	this.uniforms['coeffU'].value = this.coeff[1];
 	this.uniforms['coeffV'].value = this.coeff[2];
-	
-	if (!this.j) {
-	    this.j = 1;
-	}
-	this.j += 1;
-	if (this.j == 30) {
-	    this.j = 0;
-	    console.log(this.coeff);
-	}
     }
 };
 
@@ -253,13 +258,14 @@ PcaMesh.prototype.setShaders = function(vertShader, fragShader) {
 	'colorMatrix': {type: 'm4', value: yuvToRgb}
     };
 
-    this.mesh.material = new THREE.ShaderMaterial({
+    this.shaderMaterial = new THREE.ShaderMaterial({
 	fragmentShader: fragShader,
 	vertexShader: vertShader,
 	uniforms: this.uniforms,
 	color: 0xffffff
     });
 
+    this.mesh.material = this.shaderMaterial;
     this.setLutCoeffs();
 };
 
@@ -284,9 +290,9 @@ PcaMesh.prototype.setStaticTexture = function(blob) {
  *     basis images.
  */
 PcaMesh.prototype.setBasis = function(channel, basisIndex, blobs) {
-    for (var i = 0; i < blobs.length; ++i) {
-	this.basis_[channel][basisIndex + i] = blobs[i];
-    }
+    goog.array.forEach(blobs, function(blob, i) {
+	this.basis_[channel][basisIndex + i] = blob;
+    }, this);
 };
 
 

@@ -91,22 +91,48 @@ Choose model:
   <option value='houseSFS.yxv'>House</option>
   <option value='elephant_scorpion.yxv'>Elephant</option>
   <option value='Guba.yxv'>Guba</option>
+  <option value='quack2.yxv'>Quack</option>
+  <option value='pig.yxv'>Pig</option>
+  <option value='neil_small.yxv'>Neil Chair</option>
 </select>
+
+<span>
+Static texture:
+</span> <input type='checkbox' id='static'/>
+
+<span>Shaded:</span> <input type='checkbox' id='shaded'/>
+
 <img src='' id='image' />
-<div class='container' id='container'></div>
+ <div class='container' id='container'></div>
 <script>
 
 var main = new renderer.Main();
 
 // Setup the selection.
 var select = document.getElementById('select');
+var static = document.getElementById('static');
+var shaded = document.getElementById('shaded');
+
 select.onchange = function() {
   main.removeAllObjects();
-  main.loadModel(select.value, function() {
+  main.loadModel('objects/' + select.value, function() {
     console.log('Loaded');
   }, function() {
     console.error('Error loading');
   });
+};
+
+static.onchange = function() {
+  console.log('Static'); 
+  main.setUseStaticTexture(static.checked);
+};
+
+shaded.onchange = function() { 
+  if (shaded.checked) {
+    main.useShadedMaterial();
+  } else {
+    main.setUseStaticTexture(static.checked);
+  } 
 };
 
 main.run();
