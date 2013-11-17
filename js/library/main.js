@@ -4,8 +4,26 @@ goog.require('YxvFileReader');
 goog.require('PcaMesh');
 
 Main = function() {
-    this.image = document.getElementById('image');
-    
+    this.vertexShader = '';
+    this.fragmentShader = '';
+
+    jQuery.get('shaders/multiple_textures.vsh', undefined, 
+	       goog.bind(function(data, textStatus) {
+		       this.setVertexShader_(data);
+		   }, this));
+
+    jQuery.get('shaders/multiple_textures.fsh', undefined, 
+	       goog.bind(function(data, textStatus) {
+		       this.setFragmentShader_(data);
+		   }, this));
+	    /*
+	    error: function(error) {
+		console.log('error');
+		console.log(error);
+	    }
+	    */
+	    //	    dataType: 'script'
+	       
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, 640/480, 0.1, 1000);
     this.camera.position.z = 1.5;
@@ -28,12 +46,6 @@ Main = function() {
  * @type {!PcaMesh}
  */
 Main.prototype.object;
-
-
-/**
- * @type {!Element};
- */
-Main.prototype.image;
 
 
 /**
@@ -76,6 +88,18 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
 
 Main.prototype.run = function() {
     this.render();
+};
+
+
+/** @private */
+Main.prototype.setVertexShader_ = function(data) {
+    this.vertexShader = data;
+};
+
+
+/** @private */
+Main.prototype.setFragmentShader_ = function(data) {
+    this.fragmentShader = data;
 };
 
 
@@ -143,11 +167,7 @@ Main.prototype.onLoadModel_ = function(arrayBuffer) {
     this.object.loadBasisImages(goog.bind(function(urls) {
 	//image.setAttribute('src', URL.createObjectURL(object.lutTextureBlobs[0]));
 	//image.setAttribute('src', urls[0]);
-		
-	var vertShader = document.getElementById('vertexShader');
-	var fragShader = document.getElementById('fragmentShader');
-		
-	this.object.setShaders(vertShader.innerHTML, fragShader.innerHTML);
+        this.object.setShaders(this.vertexShader, this.fragmentShader);
 	this.scene.add(this.object.getMesh());
     }, this));
 };
