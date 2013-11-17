@@ -1,4 +1,4 @@
-SRC=library/pcamesh.js library/reader.js library/main.js binary/main.js
+SRC=library/multipletexturesrenderer.js library/pcamesh.js library/reader.js library/main.js binary/main.js 
 
 renderer.js: ${SRC}
 	python /home/birkbeck/src/closure/closure/bin/build/closurebuilder.py -c /home/birkbeck/src/closure/compiler.jar \

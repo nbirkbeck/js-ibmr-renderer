@@ -1,4 +1,5 @@
 goog.provide('PcaMesh');
+goog.require('MultipleTexturesRenderer');
 
 
 /** 
@@ -85,6 +86,9 @@ PcaMesh = function(id, basisDesc, lutDesc) {
 	}
     }
 
+    // Setup the default renderer.
+    this.renderer_ = new MultipleTexturesRenderer();
+
     // Setup the default material.
     this.mesh.material = new THREE.MeshLambertMaterial({color: 0xffffff});
 };
@@ -168,7 +172,7 @@ PcaMesh.prototype.setUseStaticTexture = function(staticTexture) {
 	var matParams = {color: 0xffffff, map: texture};
 	this.mesh.material = new THREE.MeshLambertMaterial(matParams);
     } else {
-	this.mesh.material = this.shaderMaterial;
+	this.mesh.material = this.renderer_.material;
     }
 };
 
@@ -216,10 +220,8 @@ PcaMesh.prototype.setLutCoeffs = function() {
 	}
     }
 
-    if (this.mesh.material && this.mesh.material.uniforms) {
-	this.uniforms['coeffY'].value = this.coeff[0];
-	this.uniforms['coeffU'].value = this.coeff[1];
-	this.uniforms['coeffV'].value = this.coeff[2];
+    if (this.renderer_ ) {
+	this.renderer_.setCoeff(this.coeff);
     }
 };
 
@@ -232,41 +234,11 @@ PcaMesh.prototype.setLutCoeffs = function() {
  * @param {string} fragShader The fragment shader source.
  */
 PcaMesh.prototype.setShaders = function(vertShader, fragShader) {
-    // The colorspace matrix.
-    var yuvToRgb = new THREE.Matrix4(1 , 0 , 1 , 0,
-				     1,  0 , 0 , 0,
-				     1 , 1 , 0 , 0,
-				     0 , 0 , 0 , 1);
     this.setLutCoeffs();
 
-    this.uniforms = {
-        'textureY0': {type: 't', value: this.textures_[0][0]},
-	'textureY1': {type: 't', value: this.textures_[0][1]},
-	'textureY2': {type: 't', value: this.textures_[0][2]},
-	'textureY3': {type: 't', value: this.textures_[0][3]},
-        'textureU0': {type: 't', value: this.textures_[1][0]},
-	'textureU1': {type: 't', value: this.textures_[1][1]},
-        'textureU2': {type: 't', value: this.textures_[1][2]},
-	'textureU3': {type: 't', value: this.textures_[1][3]},
-        'textureV0': {type: 't', value: this.textures_[2][0]},
-	'textureV1': {type: 't', value: this.textures_[2][1]},
-        'textureV2': {type: 't', value: this.textures_[2][2]},
-	'textureV3': {type: 't', value: this.textures_[2][3]},
-	'coeffY': {type: 'fv1', value: this.coeff[0]},
-	'coeffU': {type: 'fv1', value: this.coeff[1]},
-	'coeffV': {type: 'fv1', value: this.coeff[2]},
-	'colorMatrix': {type: 'm4', value: yuvToRgb}
-    };
+    this.renderer_.setShaders(vertShader, fragShader, this.coeff);
 
-    this.shaderMaterial = new THREE.ShaderMaterial({
-	fragmentShader: fragShader,
-	vertexShader: vertShader,
-	uniforms: this.uniforms,
-	color: 0xffffff
-    });
-
-    this.mesh.material = this.shaderMaterial;
-    this.setLutCoeffs();
+    this.mesh.material = this.renderer_.material;
 };
 
 
@@ -350,85 +322,24 @@ PcaMesh.prototype.loadBasisImages = function(callback) {
 	totalImages += this.getNumBasis(i);
     }
 
-    var pcaMesh = this;
     this.basisImages_ = [];
     for (var i = 0; i < this.getNumChannels(); ++i) {
 	var images = [];
 	for (var j = 0; j < this.getNumBasis(i); ++j) { 
 	    var image = new Image();
-	    image.onload = function() {
+	    image.onload = goog.bind(function() {
 		loaded++;
 
 		if (loaded == totalImages) {
-		    var urls = pcaMesh.packTextures();
+		    var urls = this.renderer_.initFromTextures(this.basisDesc_, this.basisImages_);
 		    callback(urls);
 		}
-	    };
+      	    }, this);
 	    image.setAttribute('src', URL.createObjectURL(this.getBasis(i)[j]));
 	    images[j] = image;
 	}
 	this.basisImages_[i] = images;
     }
-};
-
-
-/**
- * Pack all the basis images into textures.
- *
- * @return {!Array.<string>}
- */
-PcaMesh.prototype.packTextures = function() {
-    var canvas = document.createElement('canvas');
-    canvas.width = this.basisDesc_[0][0]
-    canvas.height = this.basisDesc_[0][1];
-
-    var sepCanvas = document.createElement('canvas');
-    sepCanvas.width = this.basisDesc_[0][0]
-    sepCanvas.height = this.basisDesc_[0][1];
-
-    var ctx = canvas.getContext('2d');
-    var sepCtx = sepCanvas.getContext('2d');
-
-    //document.body.appendChild(canvas);
-    //document.body.appendChild(sepCanvas);
-
-    var urls = [];
-    this.textures_ = [];
-    for (var i = 0; i < this.getNumChannels(); ++i) {
-	this.textures_[i] = [];
-	for (var j = 0; j < this.getNumBasis(i); j += 4) {
-	    ctx.clearRect(0, 0, this.basisDesc_[i][0], this.basisDesc_[i][1]);
-
-	    var mergedData = ctx.getImageData(0, 0, this.basisDesc_[i][0], this.basisDesc_[i][1]);
-	    
-	    for (var k = 0; k < 4; ++k) {
-		sepCtx.clearRect(0, 0, this.basisDesc_[i][0], 
-                    this.basisDesc_[i][1]);
-		sepCtx.drawImage(this.basisImages_[i][j + k], 0, 0, 
-		    this.basisDesc_[i][0], this.basisDesc_[i][1]);
-
-		var imageData = sepCtx.getImageData(0, 0, 
-                    this.basisDesc_[i][0], this.basisDesc_[i][1]);
-		var sepPixels = imageData.data;
-		var mergedPixels = mergedData.data;
-		var length = sepPixels.length;
-
-		for (var z = 0; z < length; z += 4) {
-		    mergedPixels[z + k] = sepPixels[z];
-		}
-	    }
-	    ctx.putImageData(mergedData, 0, 0);
-	    var url = canvas.toDataURL();
-
-	    var texture = new THREE.DataTexture(new Uint8Array(mergedData.data), 
-                this.basisDesc_[i][0], this.basisDesc_[i][1], THREE.RGBAFormat);
-	    texture.needsUpdate = true;
-
-	    this.textures_[i][j/4] = texture; 
-	    urls.push(url);
-	}
-    }
-    return urls;
 };
 
 
@@ -492,7 +403,6 @@ PcaMesh.prototype.setLookupTableBlobs = function(channel, basisIndex, blobs) {
     for (var i = 0; i < blobs.length; ++i) {
 	var image = new Image();
 	image.onload = render(image, i);
-
 	image.setAttribute('src', URL.createObjectURL(blobs[i]));
     }
 };
