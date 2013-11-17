@@ -18,7 +18,7 @@ Main = function() {
     this.scene = new THREE.Scene();
 
     /** @type {!THREE.PerspectiveCamera} */
-    this.camera = new THREE.PerspectiveCamera(75, 640/480, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(Main.FOVY_, 640/480, 0.1, 1000);
     this.camera.position.z = 1.5;
 
     /** @type {!THREE.WebGLRenderer} */
@@ -34,6 +34,13 @@ Main = function() {
     directionalLight.position.set(0, 0, 1);
     this.scene.add(directionalLight);
 };
+
+
+/** 
+ * @private {number}
+ * @const
+ */ 
+Main.FOVY_ = 75;
 
 
 /**
@@ -148,6 +155,7 @@ Main.prototype.setFreeze = function(freeze) {
 /**
  * Callback function when the loading of the model is complete.
  *
+ * @return {boolean} True on success.
  * @private
  */
 Main.prototype.onLoadModel_ = function(arrayBuffer) {
@@ -160,11 +168,15 @@ Main.prototype.onLoadModel_ = function(arrayBuffer) {
 
     var blob = reader.objects[0].getBasis(1)[0]; 
     this.object = reader.objects[0];
-      
+
+    var maxHeight = this.object.getMaxHeight();
+    this.camera.position.z = 1.7 * (maxHeight / Math.tan(Math.PI * Main.FOVY_ / 2.0 / 180.0));
+
     this.object.loadBasisImages(goog.bind(function(urls) {
 	//image.setAttribute('src', URL.createObjectURL(object.lutTextureBlobs[0]));
 	//image.setAttribute('src', urls[0]);
 	this.object.initShaderMaterial();
 	this.scene.add(this.object.getMesh());
     }, this));
+    return true;
 };

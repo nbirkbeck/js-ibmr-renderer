@@ -355,7 +355,7 @@ YxvFileReader.prototype.handleGeob_ = function(block, byteArray, offset) {
     var geometry = new THREE.Geometry();
     geometry.vertices.length = numVert;
     for (var i = 0; i < numVert; ++i) {
-	geometry.vertices[i] = new THREE.Vector3(vert[3 * i], 
+	geometry.vertices[i] = new THREE.Vector3(-vert[3 * i], 
 						 this.version == 0 ? vert[3 * i + 1] : - vert[3 * i + 1], 
 						 vert[3 * i + 2]);
     }
@@ -363,8 +363,8 @@ YxvFileReader.prototype.handleGeob_ = function(block, byteArray, offset) {
     geometry.faces.length = numTris;
     for (var i = 0; i < numTris; ++i) {
 	var v1 = tris[3 * i];
-	var v2 = tris[3 * i + 2];
-	var v3 = tris[3 * i + 1];
+	var v2 = tris[3 * i + 1];
+	var v3 = tris[3 * i + 2];
 
 	geometry.faces[i] = new THREE.Face3(v1, v2, v3, new THREE.Vector3(0, 0, 1));
 

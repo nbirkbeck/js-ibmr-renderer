@@ -1,5 +1,6 @@
 goog.provide('PcaMesh');
 
+goog.require('goog.array');
 goog.require('types');
 goog.require('renderer.MultipleTexturesRenderer');
 goog.require('renderer.BigTextureRenderer');
@@ -79,6 +80,7 @@ PcaMesh = function(id, basisDesc, lutDesc) {
     */
     this.renderer_ = new renderer.BigTextureRenderer('shaders/multiple_textures.vsh',
         'shaders/packed_texture.fsh');
+
     // Setup the default material.
     this.mesh.material = new THREE.MeshLambertMaterial({color: 0xffffff});
 };
@@ -181,7 +183,7 @@ PcaMesh.prototype.useShadedMaterial = function() {
  * TODO(birkbeck): Make this use the camera position as well.
  */
 PcaMesh.prototype.setLutCoeffs = function() {
-    var roty = (-this.mesh.rotation.y + Math.PI) * 180.0 / Math.PI;
+    var roty = (this.mesh.rotation.y + Math.PI) * 180.0 / Math.PI;
 
     while (roty < 0) {
 	roty += 360.0;
@@ -200,9 +202,7 @@ PcaMesh.prototype.setLutCoeffs = function() {
 	var a = lutCoord - lutMin;
 
 	if (lutMin == lutMax && lutMin == (this.lutDesc_[i][0] - 1)) {
-	    console.log('Wrap around');
 	    a = (lutCoord - lutMin) / (this.lutRangeMin_[0] + 360 - this.lutRangeMax_[0]);
-	    //lutMax = 0;
 	}
 	for (var j = 0; j < this.basisDesc_[i][2]; ++j) {
 	    this.coeff[i][j] = (this.lut_[i][j][lutMin] * (1.0 - a) + 
@@ -293,6 +293,21 @@ PcaMesh.prototype.getBasis = function(channel) {
  */
 PcaMesh.prototype.getMesh = function() {
     return this.mesh;
+};
+
+
+/**
+ * Get max height.
+ * 
+ * @return {number}
+ */
+PcaMesh.prototype.getMaxHeight = function() {
+    var miny = 0, maxy = 0;
+    goog.array.forEach(this.mesh.geometry.vertices, function(vert) {
+	    miny = Math.min(miny, vert.y);
+	    maxy = Math.max(maxy, vert.y);
+    });
+    return Math.max(Math.abs(miny), Math.abs(maxy));
 };
 
 
