@@ -13,7 +13,7 @@ uniform int numBasisY;
 uniform int numBasisU;
 uniform int numBasisV;
 
-#define scale(i) vec4(2.0 * (i.x - 0.5), 2.0 * (i.y - 0.5), 2.0 * (i.z - 0.5), 2.0 * (i.w - 0.5));
+#define scale(i) (2.0 * i - vec4(1.0, 1.0, 1.0, 1.0))
 #define maxtex 32
 
 void main() {

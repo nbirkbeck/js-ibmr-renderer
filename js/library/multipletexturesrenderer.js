@@ -1,6 +1,10 @@
-goog.provide('renderer.MultipleTexturesRenderer');
+goog.provide('vis.renderer.MultipleTexturesRenderer');
 
-goog.require('renderer.BaseRenderer');
+goog.require('vis.renderer.BaseRenderer');
+
+
+goog.scope(function() {
+var renderer = vis.renderer;
 
 
 
@@ -67,8 +71,8 @@ renderer.MultipleTexturesRenderer.prototype.setCoeff = function(coeff) {
  *
  * @return {!Array.<!Image>}
  */
-renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(basisDesc, basisImages) {
-    console.log('Init from textures');
+renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(
+    basisDesc, basisImages) {
     var canvas = document.createElement('canvas');
     canvas.width = basisDesc[0][0]
     canvas.height = basisDesc[0][1];
@@ -90,7 +94,8 @@ renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(basisDes
 	for (var j = 0; j < basisImages[i].length; j += 4) {
 	    ctx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
 
-	    var mergedData = ctx.getImageData(0, 0, basisDesc[i][0], basisDesc[i][1]);
+	    var mergedData = ctx.getImageData(0, 0, basisDesc[i][0], 
+                basisDesc[i][1]);
 	    
 	    for (var k = 0; k < 4; ++k) {
 		sepCtx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
@@ -110,7 +115,7 @@ renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(basisDes
 	    ctx.putImageData(mergedData, 0, 0);
 	    var url = canvas.toDataURL();
 
-	    var texture = new THREE.DataTexture(new Uint8Array(mergedData.data), 
+	    var texture = new THREE.DataTexture(new Uint8Array(mergedData.data),
                 basisDesc[i][0], basisDesc[i][1], THREE.RGBAFormat);
 	    texture.needsUpdate = true;
 
@@ -120,4 +125,4 @@ renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(basisDes
     }
     return urls;
 };
-
+});  // goog.scope

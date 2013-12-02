@@ -4,23 +4,8 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r61/three.js"> </script>
 <script src="js/renderer.js"> </script>
 
-<style>
-.container {
-  width: 640px;
-  height: 480px;
-  background: rgba(150, 150, 255, 1.0);
+<link rel="stylesheet" type="text/css" href="css/renderer.css" />
 
-  -moz-box-shadow: 1px 1px 15px rgba(10, 10, 10, 0.5);
-  box-shadow: 1px 1px 15px rgba(10, 10, 10, 0.5);
-}
-
-canvas {
-  width: 640px;
-  height: 480px;
-  background: rgba(150, 150, 255, 1.0);
-}
-
-</style>
 <body>
 <span>
 Choose model:
@@ -43,7 +28,12 @@ Static texture:
 <span>Freeze:</span> <input type='checkbox' id='freeze'/>
 
 <img src='' id='image' />
- <div class='container' id='container'></div>
+ <div class='container' id='container'>
+   <div class='window-overlay'>
+     <div class='overlay-message'>Message</div>
+     <div class='overlay-progress'></div>
+   </div>
+ </div>
 <script>
 
 var main = new ammi.Main();
@@ -64,7 +54,6 @@ select.onchange = function() {
 };
 
 static.onchange = function() {
-  console.log('Static'); 
   main.setUseStaticTexture(static.checked);
 };
 

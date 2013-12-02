@@ -1,15 +1,30 @@
-goog.provide('YxvFileReader');
+goog.provide('vis.YxvFileReader');
 
+goog.require('vis.PcaMesh');
 goog.require('goog.dom');
 
 
-YxvFileReader = function() {
-    this.version = 0;
-};
+goog.scope(function() {
 
 
 /**
- * type {Array.<!PcaMesh>}
+ * A class to read in a yxv file.
+ *
+ * @constructor
+ */
+vis.YxvFileReader = function() {
+    /** @type {number} */
+    this.version = 0;
+
+    /** @private {!goog.debug.Logger} */
+    this.logger_ = goog.debug.Logger.getLogger('vis.YxvFileReader');
+};
+var YxvFileReader = vis.YxvFileReader;
+
+
+/**
+ * The objects as they are loaded.
+ * @type {!Array.<!vis.PcaMesh>}
  */
 YxvFileReader.prototype.objects = [];
 
@@ -31,17 +46,21 @@ YxvFileReader.prototype.read = function(byteArray) {
     }
     var numObjects = this.getInteger_(byteArray, 8);
     var offset = 12;
-    console.log('Reading yxv file len:' + block.length + ' #obj:' + numObjects);
+    this.logger_.info('Reading yxv file len:' + block.length + ' #obj:' + 
+		      numObjects);
 
     // Iterate over each tag.
     for (; offset < byteArray.length; ) {
 	block = this.getBlockHeader_(byteArray, offset);
 
 	if (YxvFileReader.TAGS_[block.tag]) {
-	    YxvFileReader.TAGS_[block.tag].call(this, block, byteArray, 
-						offset + 8);
+	    if (!YxvFileReader.TAGS_[block.tag].call(this, block, byteArray, 
+						     offset + 8)) {
+		this.error_('Error loading tag:' + block.tag);
+		return false;
+	    }
 	} else {
-	    console.warn('Unknown tag:' + block.tag);
+	    this.logger_.warn('Unknown tag:' + block.tag);
 	}
 	offset += 8 + block.length;
     }
@@ -71,7 +90,8 @@ YxvFileReader.prototype.handlePcaObject_ = function(block, byteArray, offset) {
 	offset += 8;
     }
 
-    this.objects[objectId] = new PcaMesh(objectId, basisSizes, lutSizes);
+    this.objects[objectId] = new vis.PcaMesh(objectId, basisSizes, lutSizes);
+    return true;
 };
 
 
@@ -86,6 +106,7 @@ YxvFileReader.prototype.handlePcaObject_ = function(block, byteArray, offset) {
  */
 YxvFileReader.prototype.handleVers_ = function(block, byteArray, offset) {
     this.version = this.getInteger_(byteArray, offset);
+    return true;
 };
 
 
@@ -148,8 +169,10 @@ YxvFileReader.prototype.handleLutb_ = function(block, byteArray, offset) {
     var numBasis  = this.getInteger_(byteArray, offset + 12);
     
     // The rest of the data is just stored in the array.
-    var dataView =new Int8Array(byteArray.buffer, offset + 16, block.length - 16);
-    this.objects[objectIndex].setLookupTable(channel, basisIndex, numBasis, dataView);
+    var dataView = new Int8Array(byteArray.buffer, offset + 16, 
+	block.length - 16);
+    this.objects[objectIndex].setLookupTable(channel, basisIndex, numBasis, 
+	dataView);
     return true;
 };
 
@@ -173,20 +196,22 @@ YxvFileReader.prototype.handleLutj_ = function(block, byteArray, offset) {
     var dataView = new Uint8Array(byteArray.buffer, offset, block.length - 16);
     var segments = this.getJpegSegments_(dataView);
     if (segments.length != (numBasis + 1)) {
-	this.error_('Wrong number of segments in LUTJ tag.' + segments.length + ' ' + (numBasis + 1) + ' ' + block.length);
+	this.error_('Wrong number of segments in LUTJ tag.' + segments.length + 
+		    ' ' + (numBasis + 1) + ' ' + block.length);
 	return false;
     }
 
     var lutTextureBlobs = [];
     var object = this.objects[objectIndex];
     for (var i = 0; i < segments.length - 1; ++i) {
-	var imageView = new Uint8Array(byteArray.buffer, offset + segments[i], 
+	var imageView = new Uint8Array(byteArray.buffer, offset + segments[i],
 				       segments[i + 1] - segments[i]);
 	lutTextureBlobs[i] = new Blob([imageView], {type: 'image/jpeg'});
     }
 
     this.objects[objectIndex].lutTextureBlobs = lutTextureBlobs;
-    this.objects[objectIndex].setLookupTableBlobs(channel, basisIndex, lutTextureBlobs);
+    this.objects[objectIndex].setLookupTableBlobs(channel, basisIndex, 
+						  lutTextureBlobs);
     return true;
 };
 
@@ -261,7 +286,6 @@ YxvFileReader.prototype.handleEulerAngles_ = function(block, byteArray, offset) 
 	offset += 12;
     }
     this.objects[objectIndex].setEulerMatrix(axis);
-    console.log(axis);
     return true;
 };
 
@@ -320,6 +344,7 @@ YxvFileReader.prototype.handleGeoa_ = function(block, byteArray, offset) {
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
     this.objects[objectIndex].setGeometry(geometry);
+    return true;
 };
 
 
@@ -356,8 +381,8 @@ YxvFileReader.prototype.handleGeob_ = function(block, byteArray, offset) {
     geometry.vertices.length = numVert;
     for (var i = 0; i < numVert; ++i) {
 	geometry.vertices[i] = new THREE.Vector3(-vert[3 * i], 
-						 this.version == 0 ? vert[3 * i + 1] : - vert[3 * i + 1], 
-						 vert[3 * i + 2]);
+	    this.version == 0 ? vert[3 * i + 1] : - vert[3 * i + 1], 
+	    vert[3 * i + 2]);
     }
 
     geometry.faces.length = numTris;
@@ -366,7 +391,8 @@ YxvFileReader.prototype.handleGeob_ = function(block, byteArray, offset) {
 	var v2 = tris[3 * i + 1];
 	var v3 = tris[3 * i + 2];
 
-	geometry.faces[i] = new THREE.Face3(v1, v2, v3, new THREE.Vector3(0, 0, 1));
+	geometry.faces[i] = new THREE.Face3(v1, v2, v3, 
+	    new THREE.Vector3(0, 0, 1));
 
 	var uvs = [
 	    new THREE.Vector2(texVert[2 * v1], 1 - texVert[2 * v1 + 1]),
@@ -379,6 +405,7 @@ YxvFileReader.prototype.handleGeob_ = function(block, byteArray, offset) {
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
     this.objects[objectIndex].setGeometry(geometry);
+    return true;
 };
 
 
@@ -551,7 +578,7 @@ YxvFileReader.prototype.getDoubles_ = function(byteArray, i, num) {
  * @private
  */
 YxvFileReader.prototype.error_ = function(msg) {
-    console.error(msg);
+    this.logger_.error(msg);
 };
 
 
@@ -575,3 +602,4 @@ YxvFileReader.TAGS_ = {
     'GEOA': YxvFileReader.prototype.handleGeoa_,
     'BASJ': YxvFileReader.prototype.handleBasj_
 };
+});  // goog.scope)

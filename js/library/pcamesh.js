@@ -1,10 +1,14 @@
-goog.provide('PcaMesh');
+goog.provide('vis.PcaMesh');
 
 goog.require('goog.array');
-goog.require('types');
-goog.require('renderer.MultipleTexturesRenderer');
-goog.require('renderer.BigTextureRenderer');
-goog.require('renderer.BaseRenderer');
+goog.require('vis.types');
+goog.require('vis.renderer.MultipleTexturesRenderer');
+goog.require('vis.renderer.BigTextureRenderer');
+goog.require('vis.renderer.BaseRenderer');
+
+
+goog.scope(function() {
+
 
 
 /**
@@ -14,7 +18,7 @@ goog.require('renderer.BaseRenderer');
  * @param {!BasisDesc} basisDesc Information about the basis (size, numChannels)
  * @param {!LutDesc} lutDesc Information about the look-up table.
  */
-PcaMesh = function(id, basisDesc, lutDesc) {
+vis.PcaMesh = function(id, basisDesc, lutDesc) {
     /** 
      * Integer identifier for this object.
      * @type {number}
@@ -28,11 +32,13 @@ PcaMesh = function(id, basisDesc, lutDesc) {
     this.mesh = new THREE.Mesh();
 
     /** 
+     * Descriptor for the basis.
      * @private {!BasisDesc}
      */
     this.basisDesc_ = basisDesc;
 
     /** 
+     * Descriptor for the look-up tables.
      * @private {!LutDesc}
      */
     this.lutDesc_ = lutDesc;
@@ -74,17 +80,13 @@ PcaMesh = function(id, basisDesc, lutDesc) {
 	}
     }
 
-    // Setup the default renderer.
-    /*    this.renderer_ = new renderer.MultipleTexturesRenderer('shaders/multiple_textures.vsh',
-        'shaders/multiple_textures.fsh');
-    */
-    this.renderer_ = new renderer.BigTextureRenderer('shaders/multiple_textures.vsh',
-        'shaders/packed_texture.fsh');
+    /** @private {vis.renderer.Renderer} */
+    this.renderer_ = new vis.renderer.BigTextureRenderer();
 
     // Setup the default material.
     this.mesh.material = new THREE.MeshLambertMaterial({color: 0xffffff});
 };
-
+var PcaMesh = vis.PcaMesh;
 
 /**
  * Set the geometry used by the mesh. 
@@ -314,15 +316,16 @@ PcaMesh.prototype.getMaxHeight = function() {
 /**
  * Load the basis images.
  * 
+ * @param {function(number, string)} progress Progress callback.
  * @param {function()} callback Callback when loading is complete.
  */
-PcaMesh.prototype.loadBasisImages = function(callback) {
-    console.log('Load basis images');
+PcaMesh.prototype.loadBasisImages = function(progress, callback) {
     var loaded = 0;
     var totalImages = 0;
     for (var i = 0; i < this.getNumChannels(); ++i) {
 	totalImages += this.getNumBasis(i);
     }
+    progress(0, 'Setting up images');
 
     this.basisImages_ = [];
     for (var i = 0; i < this.getNumChannels(); ++i) {
@@ -331,9 +334,13 @@ PcaMesh.prototype.loadBasisImages = function(callback) {
 	    var image = new Image();
 	    image.onload = goog.bind(function() {
 		loaded++;
+                progress(0.1 * loaded / totalImages, 'Setting up images');
 
 		if (loaded == totalImages) {
-		    var urls = this.renderer_.initFromTextures(this.basisDesc_, this.basisImages_);
+		    var urls = this.renderer_.initFromTextures(this.basisDesc_, 
+		        this.basisImages_, function(percent, message) {
+			    progress(0.9 * percent, message);
+			});
 		    callback(urls);
 		}
       	    }, this);
@@ -408,3 +415,4 @@ PcaMesh.prototype.setLookupTableBlobs = function(channel, basisIndex, blobs) {
 	image.setAttribute('src', URL.createObjectURL(blobs[i]));
     }
 };
+});  // goog.scope)
