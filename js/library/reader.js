@@ -60,7 +60,7 @@ YxvFileReader.prototype.read = function(byteArray) {
 		return false;
 	    }
 	} else {
-	    this.logger_.warn('Unknown tag:' + block.tag);
+	    this.logger_.warning('Unknown tag:' + block.tag);
 	}
 	offset += 8 + block.length;
     }

@@ -1091,6 +1091,19 @@ THREE.Texture = function(img){};
 /** @type {boolean} */
 THREE.Texture.prototype.flipY;
 
+/**
+@constructor
+@extends {THREE.Texture}
+@param {*} data
+@param {*} w
+@param {*} h
+@param {*} format
+*/
+THREE.DataTexture = function(data, w, h, format){};
+
+/** @type {boolean} */
+THREE.DataTexture.prototype.needsUpdate;
+
 // ============================================================================
 // THREE.Material
 // ============================================================================
@@ -1354,3 +1367,34 @@ THREE.RepeatWrapping = function(){};
 
 /** @const */
 THREE.DoubleSide = function(){};
+
+
+/** @constructor */
+THREE.WebGLRenderer = function(){};
+
+/**
+ * @param {number} w
+ * @param {number} h
+ */
+THREE.WebGLRenderer.prototype.setSize = function(w, h) {};
+
+/** @param {boolean} b */
+THREE.WebGLRenderer.prototype.setDepthTest = function(b) {};
+
+/** @param {boolean} b */
+THREE.WebGLRenderer.prototype.setDepthWrite = function(b) {};
+
+/** 
+ * @param {!THREE.Scene} scene
+ * @param {!THREE.Camera} camera
+ */
+THREE.WebGLRenderer.prototype.render = function(scene, camera) {};
+
+
+/** @type {Element} */
+THREE.WebGLRenderer.prototype.domElement;
+
+
+
+/** @constructor */
+THREE.UVMapping = function() {};

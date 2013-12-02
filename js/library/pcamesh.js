@@ -17,6 +17,7 @@ goog.scope(function() {
  * @param {number} id Integer identifier.
  * @param {!BasisDesc} basisDesc Information about the basis (size, numChannels)
  * @param {!LutDesc} lutDesc Information about the look-up table.
+ * @constructor
  */
 vis.PcaMesh = function(id, basisDesc, lutDesc) {
     /** 

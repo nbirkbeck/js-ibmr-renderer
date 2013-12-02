@@ -14,6 +14,7 @@ var ShaderLoader = vis.ShaderLoader;
  * channel.
  *
  * @extends {renderer.BigTextureRenderer}
+ * @constructor
  */
 renderer.BigTextureRenderer = function() { 
     goog.base(this, renderer.BigTextureRenderer.VERT_SHADER_URL_,
