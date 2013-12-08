@@ -8,7 +8,11 @@ goog.require('vis.PcaMesh');
 goog.require('vis.ShaderLoader');
 goog.require('vis.ui.Overlay');
 goog.require('vis.ui.events.EventType');
+goog.require('goog.events');
+goog.require('goog.events.EventType');
+goog.require('goog.math.Coordinate');
 goog.require('goog.pubsub.PubSub');
+goog.require('goog.style');
 goog.require('goog.debug.Logger');
 
 
@@ -42,7 +46,9 @@ vis.ui.Main = function() {
     this.renderer.setSize(640, 480);
     this.renderer.setDepthTest(true);
     this.renderer.setDepthWrite(true);
-    
+
+    this.autoRotate_ = true;
+
     var container = document.getElementById('container');
     container.appendChild(this.renderer.domElement);
     
@@ -63,6 +69,10 @@ vis.ui.Main = function() {
 				'Error loading shaders.');
        }
     }, this));
+
+    goog.events.listen(this.renderer.domElement, goog.events.EventType.MOUSEMOVE, goog.bind(this.onMouseMove_, this));
+    goog.events.listen(this.renderer.domElement, goog.events.EventType.MOUSEUP, goog.bind(this.onMouseUp_, this));
+    goog.events.listen(this.renderer.domElement, goog.events.EventType.MOUSEDOWN, goog.bind(this.onMouseDown_, this));
 };
 var Main = vis.ui.Main;
 
@@ -196,8 +206,9 @@ Main.prototype.render = function () {
     requestAnimationFrame(goog.bind(this.render, this));
     
     if (this.object) {
-	this.object.mesh.rotation.x = Math.PI;
-	this.object.mesh.rotation.y += 0.02;
+	if (this.autoRotate_) {
+	    this.object.mesh.rotation.y += 0.02;
+	}
 	if (!this.freeze_) {
 	    this.object.setLutCoeffs();
 	}
@@ -235,6 +246,9 @@ Main.prototype.onLoadModel_ = function(arrayBuffer) {
         Math.PI * Main.FOVY_ / 2.0 / 180.0));
 
     // Add the object early.
+    this.autoRotate_ = true;
+    this.object.mesh.rotation.x = Math.PI;
+
     this.object.setUseStaticTexture(true);
     this.scene.add(this.object.getMesh());
     this.render();
@@ -249,4 +263,47 @@ Main.prototype.onLoadModel_ = function(arrayBuffer) {
       }, this));
     return true;
 };
+
+/** 
+ * Callback for mouse move.
+ */
+Main.prototype.onMouseMove_ = function(event) {
+    if (this.mouseDown_) {
+	var mouse = this.getMouseCoordinate_(event);
+	
+	var dx = mouse.x - this.mouseDown_.x;
+	var dy = mouse.y - this.mouseDown_.y;
+	if (this.object && this.object.mesh) {
+	    console.log('Rotate' + dx);
+	    this.object.mesh.rotation.y -= 0.5 * dx * Math.PI / 180.0;
+	    this.object.mesh.rotation.x += 0.15 * dy * Math.PI / 180.0;
+	    this.autoRotate_ = false;
+	}
+	this.mouseDown_ = mouse;
+    }
+};
+
+
+/** 
+ * Callback for mouse up.
+ */
+Main.prototype.onMouseUp_ = function(event) {
+    this.mouseDown_ = undefined;
+}
+
+
+/** 
+ * Callback for mouse down.
+ */
+Main.prototype.onMouseDown_ = function(event) {
+    this.mouseDown_ = this.getMouseCoordinate_(event);
+};
+
+
+Main.prototype.getMouseCoordinate_ = function(event) {
+    var pageOffset = goog.style.getPageOffset(this.renderer.domElement);
+    return new goog.math.Coordinate(event.clientX - pageOffset.x, 
+				    event.clientY - pageOffset.y);
+};
+
 });  // goog.scope)
