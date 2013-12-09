@@ -32,6 +32,12 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
      */
     this.mesh = new THREE.Mesh();
 
+
+    /**
+     * @type {!Array.<!Array.<numbe>>}
+     */
+    this.coeff = [[], [], []];
+
     /** 
      * Descriptor for the basis.
      * @private {!BasisDesc}
@@ -67,7 +73,6 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
     for (var i = 0; i < basisDesc.length; ++i) {
 	this.basis_[i] = [];
     }
-
     /**
      * An array of look-up tables (one for each texture channel).
      * @private {!Array.<!Array.<!Array.<number>>}
@@ -84,6 +89,8 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
     /** @private {vis.renderer.Renderer} */
     this.renderer_ = new vis.renderer.BigTextureRenderer();
 
+    this.basisPercent_ = 100.0;
+
     // Setup the default material.
     this.mesh.material = new THREE.MeshLambertMaterial({color: 0xffffff});
 };
@@ -97,6 +104,12 @@ var PcaMesh = vis.PcaMesh;
 PcaMesh.prototype.setGeometry = function(geometry) {
     this.mesh.geometry = geometry;
 };
+
+
+PcaMesh.prototype.setBasisPercent = function(percent) {
+    this.basisPercent_ = percent;
+}
+
 
 
 /**
@@ -161,7 +174,7 @@ PcaMesh.prototype.setLutRange = function(mean, min, max) {
  * @param {boolean} staticTexture
  */
 PcaMesh.prototype.setUseStaticTexture = function(staticTexture) {
-    if (staticTexture) {
+    if (staticTexture && this.staticTexture_) {
 	var url = URL.createObjectURL(this.staticTexture_);
 	var texture = THREE.ImageUtils.loadTexture(url, new THREE.UVMapping());
 	var matParams = {color: 0xffffff, map: texture};
@@ -188,26 +201,36 @@ PcaMesh.prototype.useShadedMaterial = function() {
 PcaMesh.prototype.setLutCoeffs = function() {
     var roty = (this.mesh.rotation.y + Math.PI) * 180.0 / Math.PI;
 
-    while (roty < 0) {
+    while (roty < this.lutRangeMin_[1]) {
 	roty += 360.0;
     }
-    while (roty > 360) {
+    while (roty > this.lutRangeMax_[1]) {
 	roty -= 360.0;
     }
 
     this.coeff = [[], [], []];
 
     for (var i = 0; i < this.getNumChannels(); ++i) {
-	var lutCoord = this.lutDesc_[i][0] * (roty - this.lutRangeMin_[0]) 
-	    / (this.lutRangeMax_[0] - this.lutRangeMin_[0]) + 0.5;
+	var lutCoord = (this.lutDesc_[i][0] - 1) * (roty - this.lutRangeMin_[1]) 
+	    / (this.lutRangeMax_[1] - this.lutRangeMin_[1]);
 	var lutMin = Math.max(0, Math.floor(lutCoord));
 	var lutMax = Math.min(this.lutDesc_[i][0] - 1, Math.floor(lutCoord) + 1);
 	var a = lutCoord - lutMin;
 
-	if (lutMin == lutMax && lutMin == (this.lutDesc_[i][0] - 1)) {
-	    a = (lutCoord - lutMin) / (this.lutRangeMin_[0] + 360 - this.lutRangeMax_[0]);
+	if (roty < this.lutRangeMin_[1]) {
+	    lutMin = this.lutDesc_[i][0] - 1;
+	    lutMax = 0;
+	    a = (roty + 360.0 - this.lutRangeMax_[1]) / 
+                (this.lutRangeMin_[1] + 360.0 - this.lutRangeMax_[1]);
+	} else if (lutMin == lutMax && lutMin == (this.lutDesc_[i][0] - 1)) {
+	    lutMin = this.lutDesc_[i][0] - 1;
+	    lutMax = 0;
+	    a = (roty - this.lutRangeMax_[1]) / 
+                (this.lutRangeMin_[1] + 360.0 - this.lutRangeMax_[1]);
 	}
-	for (var j = 0; j < this.basisDesc_[i][2]; ++j) {
+	var maxCoeff = Math.ceil(this.basisPercent_ * this.basisDesc_[i][2] / 100 / 4) * 4;
+	maxCoeff = Math.max(4, Math.min(this.basisDesc_[i][2], maxCoeff));
+	for (var j = 0; j < maxCoeff; ++j) {
 	    this.coeff[i][j] = (this.lut_[i][j][lutMin] * (1.0 - a) + 
 				this.lut_[i][j][lutMax] * a);
 	}

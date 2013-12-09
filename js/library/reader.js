@@ -106,6 +106,7 @@ YxvFileReader.prototype.handlePcaObject_ = function(block, byteArray, offset) {
  */
 YxvFileReader.prototype.handleVers_ = function(block, byteArray, offset) {
     this.version = this.getInteger_(byteArray, offset);
+    console.log('Version:' + this.version);
     return true;
 };
 
@@ -127,6 +128,9 @@ YxvFileReader.prototype.handleLutRange_ = function(block, byteArray, offset) {
     var mean = this.getFloats_(byteArray, offset, 3); offset += 12;
     var min = this.getFloats_(byteArray, offset, 3); offset += 12;
     var max = this.getFloats_(byteArray, offset, 3); offset += 12;
+    console.log('Min:'); console.log(min);
+    console.log('Mean:'); console.log(mean);
+    console.log('Max:'); console.log(max);
     this.objects[objectId].setLutRange(mean, min, max);
     return true;
 };
@@ -229,6 +233,8 @@ YxvFileReader.prototype.handlePos_ = function(block, byteArray, offset) {
     var objectIndex = this.getInteger_(byteArray, offset);
     var position = this.getFloats_(byteArray, offset + 4, 3);
     this.objects[objectIndex].setPosition(position);
+    console.log('Position:');
+    console.log(position);
     return true;
 };
 
@@ -246,6 +252,8 @@ YxvFileReader.prototype.handleRot_ = function(block, byteArray, offset) {
     var objectIndex = this.getInteger_(byteArray, offset);
     var rot = this.getDoubles_(byteArray, offset + 4, 3);
     this.objects[objectIndex].setEulerAngles(rot);
+    console.log('rotate:');
+    console.log(rot);
     return true;
 };
 
@@ -285,6 +293,7 @@ YxvFileReader.prototype.handleEulerAngles_ = function(block, byteArray, offset) 
 	axis[i] = this.getFloats_(byteArray, offset, 3);
 	offset += 12;
     }
+    console.log(axis);
     this.objects[objectIndex].setEulerMatrix(axis);
     return true;
 };
@@ -427,8 +436,9 @@ YxvFileReader.prototype.handleBasj_ = function(block, byteArray, offset) {
     
     var dataView = new Uint8Array(byteArray.buffer, offset, block.length - 16);
     var segments = this.getJpegSegments_(dataView);
-    if (segments.length != 5) {
-	this.error_('Wrong number of segments in BASJ tag.');
+    if (segments.length != (numBasis + 1)) {
+	this.error_('Wrong number of segments in BASJ tag.  Had:' + 
+		    segments.length + ' expected ' + (numBasis + 1));
 	return false;
     }
     var textureBlobs = [];
@@ -578,7 +588,8 @@ YxvFileReader.prototype.getDoubles_ = function(byteArray, i, num) {
  * @private
  */
 YxvFileReader.prototype.error_ = function(msg) {
-    this.logger_.error(msg);
+    console.log('Error:' + msg);
+    this.logger_.severe(msg);
 };
 
 

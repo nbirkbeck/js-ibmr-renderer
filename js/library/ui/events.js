@@ -12,6 +12,7 @@ vis.ui.events.EventType = {
     DOWNLOAD_PROGRESS: 'download_progress',
     DOWNLOAD_COMPLETED: 'download_completed',
     OBJECT_READY: 'object_ready',
+    COEFFS_CHANGED: 'coeffs_changed',
     TEXTURE_PROGRESS: 'texture_progress',
     FATAL_ERROR: 'fatal_error'
 };

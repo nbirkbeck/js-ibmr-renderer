@@ -17,5 +17,9 @@ goog.exportProperty(Main.prototype, 'setUseStaticTexture',
     Main.prototype.setUseStaticTexture);
 goog.exportProperty(Main.prototype, 'useShadedMaterial',
     Main.prototype.useShadedMaterial);
+goog.exportProperty(Main.prototype, 'getBasisImages',
+    Main.prototype.getBasisImages);
+goog.exportProperty(Main.prototype, 'getLutCoeffs',
+    Main.prototype.getLutCoeffs);
 goog.exportProperty(Main.prototype, 'removeAllObjects', 
     Main.prototype.removeAllObjects);

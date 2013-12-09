@@ -1,62 +1,165 @@
 <html>
 
+
 <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/flot/0.8.1/jquery.flot.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r61/three.js"> </script>
 <script src="js/renderer.js"> </script>
 
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
 <link rel="stylesheet" type="text/css" href="css/renderer.css" />
 
 <body>
-<span>
-Choose model:
-</span>
-<select id='select'>
-  <option value='houseSFS.yxv'>House</option>
-  <option value='elephant_scorpion.yxv'>Elephant</option>
-  <option value='Guba.yxv'>Guba</option>
-  <option value='quack2.yxv'>Quack</option>
-  <option value='pig.yxv'>Pig</option>
-  <option value='neil_small.yxv'>Neil Chair</option>
-  <option value='Fazer.yxv'>Fazer</option>
-</select>
-
-<span>
-Static texture:
-</span> <input type='checkbox' id='static'/>
-
-<span>Shaded:</span> <input type='checkbox' id='shaded'/>
-
-<span>Freeze:</span> <input type='checkbox' id='freeze'/>
-
-<img src='' id='image' />
+<div id='basis-dialog' title='Basis images' style='display: none'>
+  <div id='basis-tabs'>
+    <ul>
+      <li><a href="#tabs-Y">Y</a></li>
+      <li><a href="#tabs-U">U</a></li>
+      <li><a href="#tabs-V">V</a></li>
+    </ul>
+    <div id="tabs-Y"></div>
+    <div id="tabs-U"></div>
+    <div id="tabs-V"></div>
+  </div>
+</div>
+<div class='application'>
+ <h2 class='title'>
+   Object viewer
+ </h2>
  <div class='container' id='container'>
    <div class='window-overlay'>
-     <div class='overlay-message'>Message</div>
+     <div class='overlay-message'>Please choose an object from the right.</div>
      <div class='overlay-progress'></div>
    </div>
  </div>
+
+ <div id='tabs' class='tabs'>
+  <ul>
+    <li><a href="#tabs-1">Objects</a></li>
+    <li><a href="#tabs-2">Options</a></li>
+  </ul>
+  <div id="tabs-1">
+    <div id="objects">
+    </div>
+  </div>
+  <div id="tabs-2">
+    <div>Static texture: <input type='checkbox' id='static'/></li></div>
+    <div>Shaded: <input type='checkbox' id='shaded'/></div>
+    <div>Freeze:</span> <input type='checkbox' id='freeze'/></div>
+    <br>
+    <div>
+      Basis elements:
+      <div id='basis-slider'></div>
+    </div>
+    <br>
+    <div id='dialog-button'>Show basis</div>
+    <div id='coeff-button'>Show Coeff</div>
+  </div>
+ </div>
+ <div class='clear: both;' />
+ <div id='plot' style='height: 96px; width: 800px; float: left; display: none;'></div>
+</div>
 <script>
 
-console.log(main);
-console.log(ammi);
-console.log(ammi.Main);
-
 var main = new ammi.Main();
+var objects = [
+  ['House', 'houseSFS.yxv'],
+  ['Elephant', 'elephant_scorpion.yxv'],
+  ['Emperor', 'emperor.yxv'],
+  ['Guba', 'Guba.yxv'],
+  ['Patches', 'Patches.yxv'],
+  ['Quack2', 'quack2.yxv'],
+  ['Neil Chair', 'neil_small.yxv'],
+  ['Fazer', 'Fazer.yxv']
+];
+
+var objectsEl = $("#objects");
+for (var i = 0; i < objects.length; ++i) {
+  var createFunction = function(url, div) {
+    return function() {
+      main.removeAllObjects();
+      main.loadModel('objects/' + url, function() {
+        div.addClass('active');
+        }, function() {
+           console.log('Error loading.');
+        });
+     };
+  }
+  var image = $("<img src='images/" + objects[i][0] + ".gif'></img>");
+  var div  = $("<div></div>");
+  var title = $("<div>" + objects[i][0] + "</div>");
+  title.addClass('object-title'); 
+  div.addClass('object');
+  div.append(title);
+  div.append(image);
+  div.click(createFunction(objects[i][1], div));
+  objectsEl.append(div);
+}
+
+
+function createBasisTab(tab, images, j) {
+    var imageObjects = [];
+      var div = $("<div/>");
+      for (var i = 0; i < images.length; ++i) {
+         imageObjects.push($("<img class='basis-image' src='" + URL.createObjectURL(images[i]) + "'></img>"));
+         imageObjects[i].hide();
+         div.append(imageObjects[i]);
+       }
+
+       var slider = $('<div></div>').slider({
+	min: 0,
+	max: imageObjects.length - 1,
+	slide: function(event, ui) {
+	   for (var i = 0; i < imageObjects.length; ++i) {
+              imageObjects[i].hide();
+	   } 
+	   imageObjects[ui.value].show();
+       }});
+       slider.slider({value: 0});
+       imageObjects[0].show();
+
+       tab.append(div);
+       tab.append(slider);
+}
+
+$(function() {
+  $('#coeff-button').button().click(function() {
+     $("#plot").show();
+  });
+
+  $('#dialog-button').button().click(function() {
+    var images = main.getBasisImages();
+    var dialog = $('#basis-dialog');
+    var dialogTabs = $('#basis-tabs');
+    dialogTabs.tabs();     
+    dialog.dialog();
+
+    var tabs = ['tabs-Y', 'tabs-U', 'tabs-V'];
+    for (var j = 0; j < tabs.length; ++j) {
+      var tab = $('#' + tabs[j]);
+      tab.empty();
+      createBasisTab(tab, images[j], j);
+     }
+  });
+  $('#basis-slider').slider({
+   min: 0, 
+   max: 100,
+   value: 100,
+   slide: function(event, ui) {
+    main.setBasisPercent(ui.value);
+   }
+  });
+
+  $('#tabs').tabs();
+  $('#tabs').removeClass('ui-corner-all');
+});
 
 // Setup the selection.
 var select = document.getElementById('select');
 var static = document.getElementById('static');
 var shaded = document.getElementById('shaded');
 var freeze = document.getElementById('freeze');
-
-select.onchange = function() {
-  main.removeAllObjects();
-  main.loadModel('objects/' + select.value, function() {
-    console.log('Loaded');
-  }, function() {
-    console.error('Error loading');
-  });
-};
 
 static.onchange = function() {
   main.setUseStaticTexture(static.checked);
@@ -74,6 +177,24 @@ freeze.onchange = function() {
    main.setFreeze(freeze.checked);
 }
 
+var data = [[], [], []];
+var t = 0;
+window.setInterval(function() {
+  var coeffs = main.getLutCoeffs();
+
+  if (coeffs && coeffs.length) {
+    for (var i = 0; i < data.length; ++i) {
+      data[i].push([t, coeffs[0][i + 1]]);
+
+      if (data[i].length > 120) {
+        data[i] = data[i].slice(data[i].length - 120, data[i].length);
+      }
+    }
+    t += 1;
+
+    $.plot('#plot', data);
+  }
+}, 50);
 main.run();
 
 </script>

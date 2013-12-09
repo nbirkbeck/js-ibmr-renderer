@@ -71,6 +71,10 @@ renderer.BigTextureRenderer.prototype.setCoeff = function(coeff) {
 	this.uniforms['coeffY'].value = coeff[0];
 	this.uniforms['coeffU'].value = coeff[1];
 	this.uniforms['coeffV'].value = coeff[2];
+
+	this.uniforms['numBasisY'].value = coeff[0].length;
+	this.uniforms['numBasisU'].value = coeff[1].length;
+	this.uniforms['numBasisV'].value = coeff[2].length;
     };
 };
 

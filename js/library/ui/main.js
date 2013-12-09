@@ -48,6 +48,7 @@ vis.ui.Main = function() {
     this.renderer.setDepthWrite(true);
 
     this.autoRotate_ = true;
+    this.basisPercent_ = 100.0;
 
     var container = document.getElementById('container');
     container.appendChild(this.renderer.domElement);
@@ -64,7 +65,7 @@ vis.ui.Main = function() {
     ShaderLoader.getInstance().loadShaders(goog.bind(function(numLoaded, numError) {
        this.logger_.info('Loaded shaders:' + numLoaded);
        if (numError) {
-	   this.logger_.error('Shader loading with errors:' + numError);
+	   this.logger_.severe('Shader loading with errors:' + numError);
 	   this.pubSub_.publish(events.EventType.FATAL_ERROR, 
 				'Error loading shaders.');
        }
@@ -113,14 +114,14 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
   }, this), false); 
 
   oReq.onerror = function (oEvent) {
-      this.logger_.error('Load model error.');
+      this.logger_.severe('Load model error.');
       if (oEvent) {
 	  onError(oEvent);
       }
   }; 
 
   oReq.onabort = function (oEvent) {
-      this.logger_.error('Load model aborted.');
+      this.logger_.severe('Load model aborted.');
       if (oEvent) {
 	  onError(oEvent);
       }
@@ -133,7 +134,7 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
     var arrayBuffer = oReq.response;
     if (arrayBuffer) {
 	if (!this.onLoadModel_(arrayBuffer)) {
-	    this.logger_.error('Error loading model');
+	    this.logger_.severe('Error loading model');
 	    onError(oEvent);
 	}
     } else {
@@ -159,6 +160,17 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
  */
 Main.prototype.subscribe = function(topic, fn, opt_context) {
     return this.pubSub_.subscribe(topic, fn, opt_context);
+};
+
+
+/**
+ * @param {number} pct
+ */
+Main.prototype.setBasisPercent = function(pct) {
+    this.basisPercent_ = pct;
+    if (this.object) {
+	this.object.setBasisPercent(pct);
+    }
 };
 
 
@@ -200,6 +212,17 @@ Main.prototype.useShadedMaterial = function (value) {
 
 
 /**
+ *
+ */
+Main.prototype.getLutCoeffs = function() {
+    if (this.object) {
+	return this.object.coeff;
+    }
+    return [];
+};
+
+
+/**
  * Render the scene.
  */
 Main.prototype.render = function () {
@@ -222,6 +245,21 @@ Main.prototype.render = function () {
  */
 Main.prototype.setFreeze = function(freeze) {
     this.freeze_ = freeze;
+};
+
+
+/**
+ * @type {boolean} freeze
+ */
+Main.prototype.getBasisImages = function() {
+    if (this.object) {
+	var images = [];
+	for (var i = 0; i < 3; ++i) {
+	    images.push(this.object.getBasis(i));
+	}
+	return images;
+    }
+    return [];
 };
 
 
@@ -274,7 +312,6 @@ Main.prototype.onMouseMove_ = function(event) {
 	var dx = mouse.x - this.mouseDown_.x;
 	var dy = mouse.y - this.mouseDown_.y;
 	if (this.object && this.object.mesh) {
-	    console.log('Rotate' + dx);
 	    this.object.mesh.rotation.y -= 0.5 * dx * Math.PI / 180.0;
 	    this.object.mesh.rotation.x += 0.15 * dy * Math.PI / 180.0;
 	    this.autoRotate_ = false;

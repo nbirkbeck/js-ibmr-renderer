@@ -14,7 +14,7 @@ uniform int numBasisU;
 uniform int numBasisV;
 
 #define scale(i) (2.0 * i - vec4(1.0, 1.0, 1.0, 1.0))
-#define maxtex 32
+#define maxtex 64
 
 void main() {
   float y = 0.0, u = 0.0, v = 0.0;
