@@ -1,6 +1,7 @@
 /**
- * @fileoverview Main application.
+ * @fileoverview The main application.
  */
+
 goog.provide('vis.ui.Main');
 
 goog.require('vis.YxvFileReader');
@@ -47,7 +48,16 @@ vis.ui.Main = function() {
     this.renderer.setDepthTest(true);
     this.renderer.setDepthWrite(true);
 
+    /**
+     * Whether auto-rotate is on (turns off as soon as mouse is moved).
+     * @type {boolean} 
+     */
     this.autoRotate_ = true;
+
+    /**
+     * The number of basis elements to render.
+     * @type {number}
+     */
     this.basisPercent_ = 100.0;
 
     var container = document.getElementById('container');
@@ -57,34 +67,43 @@ vis.ui.Main = function() {
     directionalLight.position.set(0, 0, 1);
     this.scene.add(directionalLight);
 
+    /** @private {!goog.pubsub.PubSub} */
     this.pubSub_ = new goog.pubsub.PubSub();
 
     // Setup the overlay.
     this.overlay_ = new vis.ui.Overlay(this.pubSub_, container);
 
-    ShaderLoader.getInstance().loadShaders(goog.bind(function(numLoaded, numError) {
-       this.logger_.info('Loaded shaders:' + numLoaded);
-       if (numError) {
-	   this.logger_.severe('Shader loading with errors:' + numError);
-	   this.pubSub_.publish(events.EventType.FATAL_ERROR, 
-				'Error loading shaders.');
-       }
-    }, this));
+    // Log load shader errors.
+    ShaderLoader.getInstance().loadShaders(
+       goog.bind(function(numLoaded, numError) {
+         this.logger_.info('Loaded shaders:' + numLoaded);
+         if (numError) {
+	     this.logger_.severe('Shader loading with errors:' + numError);
+	     this.pubSub_.publish(events.EventType.FATAL_ERROR, 
+				  'Error loading shaders.');
+	 }
+       }, this));
 
-    goog.events.listen(this.renderer.domElement, goog.events.EventType.MOUSEMOVE, goog.bind(this.onMouseMove_, this));
-    goog.events.listen(this.renderer.domElement, goog.events.EventType.MOUSEUP, goog.bind(this.onMouseUp_, this));
-    goog.events.listen(this.renderer.domElement, goog.events.EventType.MOUSEDOWN, goog.bind(this.onMouseDown_, this));
+    // Listen to mouse events on the canvas.
+    goog.events.listen(this.renderer.domElement,
+	goog.events.EventType.MOUSEMOVE, goog.bind(this.onMouseMove_, this));
+    goog.events.listen(this.renderer.domElement, 
+	goog.events.EventType.MOUSEUP, goog.bind(this.onMouseUp_, this));
+    goog.events.listen(this.renderer.domElement,
+        goog.events.EventType.MOUSEDOWN, goog.bind(this.onMouseDown_, this));
 };
 var Main = vis.ui.Main;
 
 
 /**
+ * The current object (only support for one ATM).
  * @type {!vis.PcaMesh}
  */
 Main.prototype.object;
 
 
 /** 
+ * The fov in y direction.
  * @private {number}
  * @const
  */ 
@@ -164,6 +183,8 @@ Main.prototype.subscribe = function(topic, fn, opt_context) {
 
 
 /**
+ * Set the number of basis elements used to render (in percent).
+ *
  * @param {number} pct
  */
 Main.prototype.setBasisPercent = function(pct) {
@@ -195,6 +216,7 @@ Main.prototype.removeAllObjects = function() {
 
 /**
  * Set use the static texture.
+ *
  * @param {boolean} value Enable the static texture.
  */
 Main.prototype.setUseStaticTexture = function(value) {
@@ -204,6 +226,7 @@ Main.prototype.setUseStaticTexture = function(value) {
 
 /**
  * Set use the shaded material.
+ *
  * @param {boolean} value Use the shaded material.
  */
 Main.prototype.useShadedMaterial = function (value) {
@@ -212,7 +235,8 @@ Main.prototype.useShadedMaterial = function (value) {
 
 
 /**
- *
+ * Get the lookup table coefficients for the object.
+ * 
  */
 Main.prototype.getLutCoeffs = function() {
     if (this.object) {
@@ -241,6 +265,8 @@ Main.prototype.render = function () {
 
 
 /**
+ * Set whether the texture is currently frozen.
+ *
  * @type {boolean} freeze
  */
 Main.prototype.setFreeze = function(freeze) {
@@ -249,7 +275,9 @@ Main.prototype.setFreeze = function(freeze) {
 
 
 /**
- * @type {boolean} freeze
+ * Get all basis images (for each channel).
+ *
+ * @return {!Array.<!vis.types.BasisBlobArray>}
  */
 Main.prototype.getBasisImages = function() {
     if (this.object) {
@@ -302,8 +330,10 @@ Main.prototype.onLoadModel_ = function(arrayBuffer) {
     return true;
 };
 
+
 /** 
  * Callback for mouse move.
+ * @private
  */
 Main.prototype.onMouseMove_ = function(event) {
     if (this.mouseDown_) {
@@ -323,6 +353,7 @@ Main.prototype.onMouseMove_ = function(event) {
 
 /** 
  * Callback for mouse up.
+ * @private
  */
 Main.prototype.onMouseUp_ = function(event) {
     this.mouseDown_ = undefined;
@@ -331,12 +362,20 @@ Main.prototype.onMouseUp_ = function(event) {
 
 /** 
  * Callback for mouse down.
+ * @private
  */
 Main.prototype.onMouseDown_ = function(event) {
     this.mouseDown_ = this.getMouseCoordinate_(event);
 };
 
 
+/**
+ * Get the mouse coordinate relative to canvas element.
+ * 
+ * @param {Event}
+ * @return {!goog.math.Coordinate}
+ * @private
+ */
 Main.prototype.getMouseCoordinate_ = function(event) {
     var pageOffset = goog.style.getPageOffset(this.renderer.domElement);
     return new goog.math.Coordinate(event.clientX - pageOffset.x, 

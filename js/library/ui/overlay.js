@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Overlay for the UI.
+ */
+
 goog.provide('vis.ui.Overlay');
 
 goog.require('vis.ui.events.EventType');

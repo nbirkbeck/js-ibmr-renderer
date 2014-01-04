@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Typedef's for events.
+ */
+
 goog.provide('vis.ui.events');
 goog.provide('vis.ui.events.EventType');
 

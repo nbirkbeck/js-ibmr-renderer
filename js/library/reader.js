@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Reader of yxv files.
+ */
+
 goog.provide('vis.YxvFileReader');
 
 goog.require('vis.PcaMesh');
@@ -30,6 +34,8 @@ YxvFileReader.prototype.objects = [];
 
 
 /** 
+ * Each block begins with a 4-byte tag and length. 
+ *
  * @typedef {{
  *     tag: string,
  *     length: number
@@ -38,6 +44,11 @@ YxvFileReader.prototype.objects = [];
 YxvFileReader.BlockHeader;
 
 
+/**
+ * Read in the yxv file from the given data.
+ *
+ * @param {!Uint8Array} byteArray The array of data.
+ */
 YxvFileReader.prototype.read = function(byteArray) {
     var block = this.getBlockHeader_(byteArray, 0);
     if (block.tag != 'PCAO') {
@@ -61,6 +72,7 @@ YxvFileReader.prototype.read = function(byteArray) {
 	    }
 	} else {
 	    this.logger_.warning('Unknown tag:' + block.tag);
+	    console.log('Unknown tag:' + block.tag);
 	}
 	offset += 8 + block.length;
     }
@@ -68,6 +80,15 @@ YxvFileReader.prototype.read = function(byteArray) {
 };
 
 
+/**
+ * Handle the PCAO (PcaObject) tag.
+ *
+ * @param {!YxvFileReader.BlockHeader} block The parsed block header.
+ * @param {!Uint8Array} byteArray The byte array.
+ * @param {number} offset The current offset.
+ * @return {boolean}
+ * @private
+ */
 YxvFileReader.prototype.handlePcaObject_ = function(block, byteArray, offset) {
     var objectId = this.getInteger_(byteArray, offset);
     var numChannels = this.getInteger_(byteArray, offset + 4);
@@ -233,8 +254,6 @@ YxvFileReader.prototype.handlePos_ = function(block, byteArray, offset) {
     var objectIndex = this.getInteger_(byteArray, offset);
     var position = this.getFloats_(byteArray, offset + 4, 3);
     this.objects[objectIndex].setPosition(position);
-    console.log('Position:');
-    console.log(position);
     return true;
 };
 
@@ -252,8 +271,6 @@ YxvFileReader.prototype.handleRot_ = function(block, byteArray, offset) {
     var objectIndex = this.getInteger_(byteArray, offset);
     var rot = this.getDoubles_(byteArray, offset + 4, 3);
     this.objects[objectIndex].setEulerAngles(rot);
-    console.log('rotate:');
-    console.log(rot);
     return true;
 };
 
@@ -588,7 +605,9 @@ YxvFileReader.prototype.getDoubles_ = function(byteArray, i, num) {
  * @private
  */
 YxvFileReader.prototype.error_ = function(msg) {
-    console.log('Error:' + msg);
+    if (console && console.log) {
+	console.log('Error:' + msg);
+    }
     this.logger_.severe(msg);
 };
 

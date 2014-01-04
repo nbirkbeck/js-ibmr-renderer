@@ -34,7 +34,8 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
 
 
     /**
-     * @type {!Array.<!Array.<numbe>>}
+     * The current lookup table coefficients.
+     * @type {!vis.types.LutCoefficients}
      */
     this.coeff = [[], [], []];
 
@@ -89,12 +90,14 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
     /** @private {vis.renderer.Renderer} */
     this.renderer_ = new vis.renderer.BigTextureRenderer();
 
+    /** @private {number} */
     this.basisPercent_ = 100.0;
 
     // Setup the default material.
     this.mesh.material = new THREE.MeshLambertMaterial({color: 0xffffff});
 };
 var PcaMesh = vis.PcaMesh;
+
 
 /**
  * Set the geometry used by the mesh. 
@@ -106,9 +109,14 @@ PcaMesh.prototype.setGeometry = function(geometry) {
 };
 
 
+/** 
+ * Set the number of basis elements to render.
+ *
+ * @param {number} percent
+ */
 PcaMesh.prototype.setBasisPercent = function(percent) {
     this.basisPercent_ = percent;
-}
+};
 
 
 
@@ -305,7 +313,7 @@ PcaMesh.prototype.getNumChannels = function() {
  * Get the blobs for the given basis channel. 
  * 
  * @param {number} channel
- * @return {!Array.<!Blob>}
+ * @return {!vis.types.BasisBlobArray}
  */
 PcaMesh.prototype.getBasis = function(channel) {
     return this.basis_[channel];
@@ -405,10 +413,16 @@ PcaMesh.prototype.setLookupTable = function(channel, basis, numBasis,
 };
 
 
+/**
+ * Set the look-up table blobs.
+ *
+ * @param {number} channel The channel index.
+ * @param {number} basisIndex The basis index.
+ * @param {!Array.<!Blob>} blobs The blobs.
+ */
 PcaMesh.prototype.setLookupTableBlobs = function(channel, basisIndex, blobs) {
     var lutDesc = this.lutDesc_;
     var pcaMesh = this;
-    var numLoaded = 0;
 
     // TODO: Fix up this so that it uses only one canvas.
     var render = function(image, i) {

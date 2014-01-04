@@ -1,3 +1,7 @@
+/**
+ * @fileoverview The default renderer.
+ */
+
 goog.provide('vis.renderer.BigTextureRenderer');
 
 goog.require('vis.ShaderLoader');
@@ -27,11 +31,24 @@ renderer.BigTextureRenderer = function() {
 };
 goog.inherits(renderer.BigTextureRenderer, renderer.BaseRenderer);
 
+
+/**
+ * The relative url to the vertex shader.
+ * @private 
+ * @const 
+ */
 renderer.BigTextureRenderer.VERT_SHADER_URL_ = 'shaders/multiple_textures.vsh';
 
+
+/**
+ * The relative url to the fragment shader.
+ * @private
+ * @const
+ */
 renderer.BigTextureRenderer.FRAG_SHADER_URL_ = 'shaders/packed_texture.fsh';
 
 
+// Register the shaders that need to be laoded.
 ShaderLoader.getInstance().addShaderUrl(
     renderer.BigTextureRenderer.VERT_SHADER_URL_);
 ShaderLoader.getInstance().addShaderUrl(
@@ -86,8 +103,6 @@ renderer.BigTextureRenderer.prototype.initFromTextures = function(basisDesc, bas
     sepCanvas.height = basisDesc[0][1];
     var sepCtx = sepCanvas.getContext('2d');
 
-    //    document.body.appendChild(sepCanvas);
-
     var urls = [];
     this.textures_ = [];
     for (var i = 0; i < basisDesc.length; ++i) {
@@ -116,11 +131,15 @@ renderer.BigTextureRenderer.prototype.initFromTextures = function(basisDesc, bas
 	    var value = i / basisDesc.length + 
 		(1 / basisDesc.length) * (j / maxNumBasis);
 
-	    console.log('Texture progress:' + value);
+	    if (console && console.log) {
+		console.log('Texture progress:' + value);
+	    }
 	    progress(value, 'Loaded texture channel:' + i + ' basis:' + j);
 	}
+
 	var texture = new THREE.DataTexture(mergedData,
-	    basisDesc[i][0], basisDesc[i][1] * maxNumBasis / 4, THREE.RGBAFormat);
+	    basisDesc[i][0], basisDesc[i][1] * maxNumBasis / 4, 
+	    THREE.RGBAFormat);
 	texture.needsUpdate = true;
 	this.textures_[i] = texture;
 	this.offs_[i] = 1.0 / (maxNumBasis / 4);  

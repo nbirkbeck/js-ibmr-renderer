@@ -1,0 +1,13 @@
+UI Elements
+** 0) Add scrollable view for available objects.
+** 1) Make it look nice
+** 2) Add options for restricting the number of basis elements.
+** 3) Show the current basis coefficients (say for first 3 or 4) 
+** - Use flot?
+** 4) Add basis explorer.
+
+
+Core:
+-Support 2D luts.
+-Make it compile with advanced optimizations (stuff is missing in three externs)
+-Stream the files.

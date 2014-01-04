@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Shader loading utility.
+ */
+
 goog.provide('vis.ShaderLoader');
 
 goog.require('goog.structs.Map');
