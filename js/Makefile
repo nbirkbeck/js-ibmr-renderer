@@ -7,8 +7,6 @@ renderer.js: ${SRC}
 	${SRC} -i binary/main.js -o compiled -f --compilation_level=WHITESPACE_ONLY -f --externs=externs/three.js \
 	-f --externs=externs/jquery-1.9.js --output_file=renderer.js
 
-#library/reader_test.html: ${SRC} Makefile
-#	python /home/birkbeck/src/closure/closure/bin/calcdeps.py --dep closure \
-#	--path library --output_mode deps --path closure -i library/reader_test.js \
-#	--output_file library/reader_test-deps.js
-#	$(shell ./gen_test.sh library/reader_test > reader_test.html)
+
+clean:
+	rm -fv library/*-deps.js library/*_test.html

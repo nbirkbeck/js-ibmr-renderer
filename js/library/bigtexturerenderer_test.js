@@ -6,6 +6,7 @@ goog.require('vis.renderer.BigTextureRenderer');
 
 goog.require('goog.testing.jsunit');
 
+
 var IMAGE_SOURCES_ = [
   '/9j/4AAQSkZJRgABAQEASABIAAD//gATQ3JlYXRlZCB3aXRoIEdJTVD/2wBDAAUDBAQEAwUEBAQF' +
   'BQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/wAAL' +

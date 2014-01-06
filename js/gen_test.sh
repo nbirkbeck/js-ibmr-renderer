@@ -11,5 +11,10 @@ cat << EOF
   <script src="${name}-deps.js"></script>
   <script src="${name}.js"></script>
 </body>
+
+<script>
+var asyncTestCase =
+        goog.testing.AsyncTestCase.createAndInstall(document.title);
+</script>
 </html>
 EOF

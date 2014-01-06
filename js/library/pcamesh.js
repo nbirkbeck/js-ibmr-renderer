@@ -73,6 +73,7 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
     for (var i = 0; i < basisDesc.length; ++i) {
 	this.basis_[i] = [];
     }
+
     /**
      * An array of look-up tables (one for each texture channel).
      * @private {!Array.<!Array.<!Array.<number>>}
@@ -223,6 +224,9 @@ PcaMesh.prototype.setLutCoeffs = function() {
 	var lutMin = Math.max(0, Math.floor(lutCoord));
 	var lutMax = Math.min(this.lutDesc_[i][0] - 1, Math.floor(lutCoord) + 1);
 	var a = lutCoord - lutMin;
+
+	console.log(roty);
+	console.log(lutCoord);
 
 	if (roty < this.lutRangeMin_[1]) {
 	    lutMin = this.lutDesc_[i][0] - 1;
@@ -423,14 +427,13 @@ PcaMesh.prototype.setLookupTableBlobs = function(channel, basisIndex, blobs) {
     var lutDesc = this.lutDesc_;
     var pcaMesh = this;
 
-    // TODO: Fix up this so that it uses only one canvas.
+    var canvas = document.createElement('canvas');
+    canvas.width = lutDesc[channel][0];
+    canvas.height = lutDesc[channel][1];
+    var ctx = canvas.getContext('2d');
+
     var render = function(image, i) {
 	return function() {
-	    var canvas = document.createElement('canvas');
-	    canvas.width = lutDesc[channel][0];
-	    canvas.height = lutDesc[channel][1];
-	    var ctx = canvas.getContext('2d');
-
 	    ctx.clearRect(0, 0, lutDesc[channel][0], lutDesc[channel][1]);
 	    ctx.drawImage(image, 0, 0, lutDesc[channel][0], lutDesc[channel][1]);
 
