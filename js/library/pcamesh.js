@@ -32,7 +32,6 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
      */
     this.mesh = new THREE.Mesh();
 
-
     /**
      * The current lookup table coefficients.
      * @type {!vis.types.LutCoefficients}

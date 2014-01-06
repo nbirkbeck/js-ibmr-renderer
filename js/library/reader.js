@@ -6,6 +6,7 @@ goog.provide('vis.YxvFileReader');
 
 goog.require('vis.PcaMesh');
 goog.require('goog.dom');
+goog.require('goog.debug.Logger');
 
 
 goog.scope(function() {
@@ -22,15 +23,14 @@ vis.YxvFileReader = function() {
 
     /** @private {!goog.debug.Logger} */
     this.logger_ = goog.debug.Logger.getLogger('vis.YxvFileReader');
+
+    /**
+     * The objects as they are loaded.
+     * @type {!Array.<!vis.PcaMesh>}
+     */
+   this.objects = [];
 };
 var YxvFileReader = vis.YxvFileReader;
-
-
-/**
- * The objects as they are loaded.
- * @type {!Array.<!vis.PcaMesh>}
- */
-YxvFileReader.prototype.objects = [];
 
 
 /** 
@@ -52,7 +52,8 @@ YxvFileReader.BlockHeader;
 YxvFileReader.prototype.read = function(byteArray) {
     var block = this.getBlockHeader_(byteArray, 0);
     if (block.tag != 'PCAO') {
-	this.error_('Unable to read byte array, invalid tag:' + block.tag);
+	this.error_('Unable to read byte array, invalid tag:' + block.tag + ' '
+		    + 'length:' + block.length);
 	return false;
     }
     var numObjects = this.getInteger_(byteArray, 8);
@@ -149,9 +150,6 @@ YxvFileReader.prototype.handleLutRange_ = function(block, byteArray, offset) {
     var mean = this.getFloats_(byteArray, offset, 3); offset += 12;
     var min = this.getFloats_(byteArray, offset, 3); offset += 12;
     var max = this.getFloats_(byteArray, offset, 3); offset += 12;
-    console.log('Min:'); console.log(min);
-    console.log('Mean:'); console.log(mean);
-    console.log('Max:'); console.log(max);
     this.objects[objectId].setLutRange(mean, min, max);
     return true;
 };
@@ -233,8 +231,8 @@ YxvFileReader.prototype.handleLutj_ = function(block, byteArray, offset) {
 				       segments[i + 1] - segments[i]);
 	lutTextureBlobs[i] = new Blob([imageView], {type: 'image/jpeg'});
     }
-
     this.objects[objectIndex].lutTextureBlobs = lutTextureBlobs;
+
     this.objects[objectIndex].setLookupTableBlobs(channel, basisIndex, 
 						  lutTextureBlobs);
     return true;
@@ -270,6 +268,7 @@ YxvFileReader.prototype.handlePos_ = function(block, byteArray, offset) {
 YxvFileReader.prototype.handleRot_ = function(block, byteArray, offset) {
     var objectIndex = this.getInteger_(byteArray, offset);
     var rot = this.getDoubles_(byteArray, offset + 4, 3);
+    console.log(rot);
     this.objects[objectIndex].setEulerAngles(rot);
     return true;
 };
@@ -568,7 +567,7 @@ YxvFileReader.prototype.getFloats_ = function(byteArray, i, num) {
 	var dataView = new DataView(byteArray.buffer);
 	var floatView = new Float32Array(num);
 	for (var j = 0; j < num; ++j) {
-	    floatView[j] = dataView.getFloat32(j * 4 + i);
+	    floatView[j] = dataView.getFloat32(j * 4 + i, true);
 	}
 	return floatView;
     }
@@ -591,7 +590,7 @@ YxvFileReader.prototype.getDoubles_ = function(byteArray, i, num) {
 	var dataView = new DataView(byteArray.buffer);
 	var floatView = new Float64Array(num);
 	for (var j = 0; j < num; ++j) {
-	    floatView[j] = dataView.getFloat32(j * 8 + i);
+	    floatView[j] = dataView.getFloat64(j * 8 + i, true);
 	}
 	return floatView;
     }
