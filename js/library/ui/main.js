@@ -72,10 +72,6 @@ vis.ui.Main = function() {
   vis.renderer.BigTextureRenderer.MAX_TEXTURE_SIZE = context.getParameter(
       context.MAX_TEXTURE_SIZE);
 
-  var div = goog.dom.createDom('div');
-  div.innerHTML = 'Max texture size:' + vis.renderer.BigTextureRenderer.MAX_TEXTURE_SIZE;
-  document.body.appendChild(div);
-
   this.renderer.setSize(640, 480);
   this.renderer.setDepthTest(true);
   this.renderer.setDepthWrite(true);
