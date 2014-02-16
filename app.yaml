@@ -1,0 +1,34 @@
+application: guestbook
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /
+  static_files: index.html
+  upload: index.html
+
+- url: /objects
+  static_dir: objects
+
+- url: /shaders
+  static_dir: shaders
+
+- url: /css
+  static_dir: css
+
+- url: /images
+  static_dir: images
+
+- url: /js/renderer.js
+  static_files: js/renderer.js
+  upload: js/renderer.js
+  
+
+libraries:
+- name: webapp2
+  version: "2.5.2"
+
+skip_files:
+- ^objects/.*compressed.*$
