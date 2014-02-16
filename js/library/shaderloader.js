@@ -64,14 +64,14 @@ ShaderLoader.prototype.loadShaders = function(complete) {
       this.shaderMap_.set(url, data);
       numLoaded++;
       if (numLoaded == this.shaderUrls_.length) {
-	complete(numLoaded, numErrors);
+        complete(numLoaded, numErrors);
       }
     }, shaderLoader)).error(goog.bind(function() {
       this.shaderMap_.set(url, null);
       numLoaded++;
       numErrors++;
       if (numLoaded == this.shaderUrls_.length) {
-	complete(numLoaded, numErrors);
+        complete(numLoaded, numErrors);
       }
     }, shaderLoader));
   });

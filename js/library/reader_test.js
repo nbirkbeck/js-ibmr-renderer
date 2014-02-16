@@ -2,9 +2,8 @@
  * @fileoverview Testing of the reader.
  */
 
-goog.require('vis.YxvFileReader');
-
 goog.require('goog.testing.jsunit');
+goog.require('vis.YxvFileReader');
 
 
 var basisDesc = [[2, 2, 4], [2, 2, 4], [2, 2, 4]];
@@ -33,7 +32,7 @@ var setTag = function(dataView, offset, tag, length) {
   dataView.setUint8(offset + 1, tag.charCodeAt(1));
   dataView.setUint8(offset + 2, tag.charCodeAt(2));
   dataView.setUint8(offset + 3, tag.charCodeAt(3));
-  dataView.setInt32(offset + 4, length, true);   
+  dataView.setInt32(offset + 4, length, true);
 };
 
 
@@ -53,7 +52,7 @@ var generateBuffer = function(numObjects, blocks) {
     setTag(dataView, offset, block.tag, block.length);
     offset += 8;
     if (block.data) {
-	  new Uint8Array(buffer, offset).set(block.data);
+        new Uint8Array(buffer, offset).set(block.data);
     }
     offset += block.length;
   });
@@ -67,10 +66,10 @@ var floatDataBlock = function(tag, index, data32, data64) {
   var dataView = new DataView(buffer);
   dataView.setInt32(0, index, true);
   for (var i = 0; i < data32.length; i++) {
-    dataView.setFloat32(4*i + 4, data32[i], true);
+    dataView.setFloat32(4 * i + 4, data32[i], true);
   }
   for (var i = 0; i < data64.length; i++) {
-    dataView.setFloat64(8*i + 4, data64[i], true);
+    dataView.setFloat64(8 * i + 4, data64[i], true);
   }
   return {
     tag: tag,
@@ -107,7 +106,7 @@ var pobjBlock = function(index, basisDesc, lutDesc) {
     dataView.setInt32(offset + 4, basisDesc[i][1], true);
     dataView.setInt32(offset + 8, basisDesc[i][2], true);
     offset += 12;
-  };
+  }
   for (var i = 0; i < numChannels; i++) {
     dataView.setInt32(offset, lutDesc[i][0], true);
     dataView.setInt32(offset + 4, lutDesc[i][1], true);
@@ -115,7 +114,7 @@ var pobjBlock = function(index, basisDesc, lutDesc) {
   }
 
   // id, numChannels, [w, h, numEig]_{channel} [lutw, luth]_{channel}
-  return { 
+  return {
     tag: 'POBJ',
     length: length,
     data: new Uint8Array(buffer)
@@ -125,7 +124,7 @@ var pobjBlock = function(index, basisDesc, lutDesc) {
 
 /**
  * Test whether the reader returns false on invalid input.
- */ 
+ */
 var testInvalidInput = function() {
   var reader = new vis.YxvFileReader();
   assertFalse(reader.read(new Uint8Array()));
@@ -134,7 +133,7 @@ var testInvalidInput = function() {
 
 /**
  * Test whether the reader returns true on the simplest of files.
- */ 
+ */
 var testEmptyFileInput = function() {
   var reader = new vis.YxvFileReader();
   var data = generateBuffer(0, []);
@@ -145,7 +144,7 @@ var testEmptyFileInput = function() {
 
 /**
  * Test whether the reader correctly loads version tag.
- */ 
+ */
 var testVersion = function() {
   var reader = new vis.YxvFileReader();
   var version = 1012;
@@ -159,7 +158,7 @@ var testVersion = function() {
 
 /**
  * Test whether the reader correctly loads when there is an unknown tag.
- */ 
+ */
 var testInvalidTag = function() {
   var reader = new vis.YxvFileReader();
   var version = 1012;
@@ -173,7 +172,7 @@ var testInvalidTag = function() {
 
 /**
  * Test whether the reader correctly loads a pca object.
- */ 
+ */
 var testPobj = function() {
   var numChannels = 3;
   var reader = new vis.YxvFileReader();
@@ -187,10 +186,10 @@ var testPobj = function() {
     [w[1], h[1], numEig[1]],
     [w[2], h[2], numEig[2]]
   ];
-  var lutDesc = [ 
+  var lutDesc = [
     [lutw[0], luth[0]],
     [lutw[1], luth[1]],
-    [lutw[2], luth[2]],
+    [lutw[2], luth[2]]
   ];
   var data = generateBuffer(1, [pobjBlock(0, basisDesc, lutDesc)]);
 
@@ -210,28 +209,28 @@ var testPobj = function() {
 
 /**
  * Test whether the reader correctly loads a pca object.
- */ 
+ */
 var testLutRange = function() {
   var reader = new vis.YxvFileReader();
   var basisDesc = [[128, 128, 4]];
   var lutDesc = [[32, 32]];
-  var buffer = new ArrayBuffer(11*4);
+  var buffer = new ArrayBuffer(11 * 4);
   var dataView = new DataView(buffer);
-  
+
   // Object and length.
   dataView.setInt32(0, 0, true);
-  dataView.setInt32(4, 3, true); 
+  dataView.setInt32(4, 3, true);
 
   var values = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   var offset = 8;
   goog.array.forEach(values, function(value) {
-    dataView.setFloat32(offset, value, true);      
+    dataView.setFloat32(offset, value, true);
     offset += 4;
   });
 
   var data = generateBuffer(1, [pobjBlock(0, basisDesc, lutDesc), {
     tag: 'LUTR',
-    length: 11*4,
+    length: 11 * 4,
     data: new Uint8Array(buffer)
   }]);
 
@@ -259,7 +258,7 @@ var testPos = function() {
   var pos = [-1., 1., 2.];
   var data = generateBuffer(1, [
     pobjBlock(0, basisDesc, lutDesc),
-    floatDataBlock('POS ', 0, pos, []),
+    floatDataBlock('POS ', 0, pos, [])
   ]);
 
   var reader = new vis.YxvFileReader();
@@ -280,7 +279,7 @@ var testSca = function() {
   var scale = [3];
   var data = generateBuffer(1, [
     pobjBlock(0, basisDesc, lutDesc),
-    floatDataBlock('SCA ', 0, scale, []),
+    floatDataBlock('SCA ', 0, scale, [])
   ]);
 
   var reader = new vis.YxvFileReader();
@@ -361,7 +360,7 @@ var testGeoa = function() {
  */
 var testGeob = function() {
   for (var version = 0; version <= 1; version++) {
-    var buffer = new ArrayBuffer(4 + 3*4 + 3*3*4 + 3*2*4 + 3*4);
+    var buffer = new ArrayBuffer(4 + 3 * 4 + 3 * 3 * 4 + 3 * 2 * 4 + 3 * 4);
     var view = new DataView(buffer);
     view.setInt32(0, 0, true);
     view.setInt32(4, 3, true);
@@ -369,10 +368,10 @@ var testGeob = function() {
     for (var i = 0; i < 3; i++) {
       var y = i + .25;
       if (version == 1) y = -y;
-	view.setFloat32(offset, -i, true); // x-coord is negated in geob
-	view.setFloat32(offset + 4, y, true);
-	view.setFloat32(offset + 8, i + .5, true);
-	offset += 12;
+        view.setFloat32(offset, -i, true); // x-coord is negated in geob
+        view.setFloat32(offset + 4, y, true);
+        view.setFloat32(offset + 8, i + .5, true);
+        offset += 12;
     }
     view.setInt32(offset, 3, true);
     offset += 4;
@@ -381,24 +380,24 @@ var testGeob = function() {
       view.setFloat32(offset + 4, i + .5, true);
       offset += 8;
     }
-    
+
     view.setInt32(offset, 1, true);
     offset += 4;
-    
+
     view.setInt32(offset, 0, true);
     view.setInt32(offset + 4, 1, true);
     view.setInt32(offset + 8, 2, true);
-    
+
     var data = generateBuffer(1, [
       pobjBlock(0, basisDesc, lutDesc), {
         tag: 'GEOB',
-	length: buffer.byteLength,
-	data: new Uint8Array(buffer)
+        length: buffer.byteLength,
+        data: new Uint8Array(buffer)
       }
     ]);
     var reader = new vis.YxvFileReader();
     reader.version = version;
-    
+
     assertTrue(reader.read(data));
     assertEquals(1, reader.objects.length);
     assertGeometry(reader.objects[0]);
@@ -419,17 +418,17 @@ var doJpegTests = function(tag, functionName) {
       var called = 0;
       // Proxy the setLookupTableBlobs, where we do the checks.
       object[functionName] = function(channel, basisIndex, blobs) {
-	assertEquals(testChannel, channel);
-	assertEquals(testBasisIndex, basisIndex);
-	assertEquals(numBasis, blobs.length);
+        assertEquals(testChannel, channel);
+        assertEquals(testBasisIndex, basisIndex);
+        assertEquals(numBasis, blobs.length);
 
-	for (var k = 0; k < blobs.length; k++) {
-	  assertEquals(sizes[k], blobs[k].size);
-	}
-	called++;
-      }
+        for (var k = 0; k < blobs.length; k++) {
+          assertEquals(sizes[k], blobs[k].size);
+        }
+        called++;
+      };
       reader.objects = [object];
-	    
+
       var buffer = new ArrayBuffer(4 * 4 + imageData.length);
       var dataView = new DataView(buffer);
 
@@ -440,13 +439,13 @@ var doJpegTests = function(tag, functionName) {
 
       var offset = 16;
       for (var i = 0; i < imageData.length; i++) {
-	dataView.setUint8(offset + i, imageData.charCodeAt(i));
+        dataView.setUint8(offset + i, imageData.charCodeAt(i));
       }
-	    
+
       var data = generateBuffer(1, [{
-	tag: tag,
-	length: buffer.byteLength,
-	data: new Uint8Array(buffer)
+        tag: tag,
+        length: buffer.byteLength,
+        data: new Uint8Array(buffer)
       }]);
       assertTrue(reader.read(data));
       assertEquals(1, called);
@@ -470,14 +469,14 @@ var testBasj = function() {
   doJpegTests('BASJ', 'setBasis');
 };
 
-	   
+
 /**
  * Test setting of the lut via jpeg.
  */
 var testStaj = function() {
   var buffer = new ArrayBuffer(4 * 3 + sizes[0]);
   var dataView = new DataView(buffer);
-  
+
   dataView.setInt32(0, 0, true);
   dataView.setInt32(4, 2, true);
   dataView.setInt32(8, 2, true);
@@ -488,7 +487,7 @@ var testStaj = function() {
   }
   var reader = new vis.YxvFileReader();
   var object = new vis.PcaMesh(0, basisDesc, lutDesc);
-  
+
   // Proxy setStaticTexture and make sure it gets called with the blob.
   var called = 0;
   object.setStaticTexture = function(blob) {
@@ -520,25 +519,25 @@ var testLutb = function() {
       dataView.setInt32(4, testChannel, true);
       dataView.setInt32(8, testBasisIndex, true);
       dataView.setInt32(12, testNumBasis, true);
-	    
+
       var reader = new vis.YxvFileReader();
       var object = new vis.PcaMesh(0, basisDesc, lutDesc);
 
       // Proxy setStaticTexture and make sure it gets called with the blob.
       var called = 0;
       object.setLookupTable = function(channel, basisIndex, numBasis, dataView) {
-	assertEquals(testChannel, channel);
-	assertEquals(testBasisIndex, basisIndex);
-	assertEquals(testNumBasis, numBasis);
-	assertEquals(2 * 2 * numBasis, dataView.byteLength);
-	called++;
+        assertEquals(testChannel, channel);
+        assertEquals(testBasisIndex, basisIndex);
+        assertEquals(testNumBasis, numBasis);
+        assertEquals(2 * 2 * numBasis, dataView.byteLength);
+        called++;
       };
-	    
+
       reader.objects = [object];
       var data = generateBuffer(1, [{
-	tag: 'LUTB',
-	length: buffer.byteLength,
-	data: new Uint8Array(buffer)
+        tag: 'LUTB',
+        length: buffer.byteLength,
+        data: new Uint8Array(buffer)
       }]);
 
       assertTrue(reader.read(data));

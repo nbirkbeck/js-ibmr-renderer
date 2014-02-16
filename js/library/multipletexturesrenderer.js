@@ -16,9 +16,10 @@ var renderer = vis.renderer;
  * @extends {renderer.BaseRenderer}
  * @constructor
  */
-renderer.MultipleTexturesRenderer = function(vertShaderUrl, fragShaderUrl) { 
+renderer.MultipleTexturesRenderer = function(vertShaderUrl, fragShaderUrl) {
   goog.base(this, vertShaderUrl, fragShaderUrl);
 
+  /** @private {!Array.<Object>} */
   this.textures_ = [];
 };
 goog.inherits(renderer.MultipleTexturesRenderer, renderer.BaseRenderer);
@@ -69,16 +70,18 @@ renderer.MultipleTexturesRenderer.prototype.setCoeff = function(coeff) {
 /**
  * Pack all the basis images into textures.
  *
+ * @param {!vis.types.BasisDesc} basisDesc
+ * @param {!Array.<!Array.<!Image>>} basisImages
  * @return {!Array.<!Image>}
  */
 renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(
     basisDesc, basisImages) {
   var canvas = document.createElement('canvas');
-  canvas.width = basisDesc[0][0]
+  canvas.width = basisDesc[0][0];
   canvas.height = basisDesc[0][1];
 
   var sepCanvas = document.createElement('canvas');
-  sepCanvas.width = basisDesc[0][0]
+  sepCanvas.width = basisDesc[0][0];
   sepCanvas.height = basisDesc[0][1];
 
   var ctx = canvas.getContext('2d');
@@ -94,32 +97,32 @@ renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(
     for (var j = 0; j < basisImages[i].length; j += 4) {
       ctx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
 
-      var mergedData = ctx.getImageData(0, 0, basisDesc[i][0], 
-	  basisDesc[i][1]);
-	    
+      var mergedData = ctx.getImageData(0, 0, basisDesc[i][0],
+        basisDesc[i][1]);
+
       for (var k = 0; k < 4; ++k) {
-	sepCtx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
-	sepCtx.drawImage(basisImages[i][j + k], 0, 0, 
-	    basisDesc[i][0], basisDesc[i][1]);
-
-	var imageData = sepCtx.getImageData(0, 0, 
+        sepCtx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
+        sepCtx.drawImage(basisImages[i][j + k], 0, 0,
             basisDesc[i][0], basisDesc[i][1]);
-	var sepPixels = imageData.data;
-	var mergedPixels = mergedData.data;
-	var length = sepPixels.length;
 
-	for (var z = 0; z < length; z += 4) {
-	  mergedPixels[z + k] = sepPixels[z];
-	}
+        var imageData = sepCtx.getImageData(0, 0,
+            basisDesc[i][0], basisDesc[i][1]);
+        var sepPixels = imageData.data;
+        var mergedPixels = mergedData.data;
+        var length = sepPixels.length;
+
+        for (var z = 0; z < length; z += 4) {
+          mergedPixels[z + k] = sepPixels[z];
+        }
       }
       ctx.putImageData(mergedData, 0, 0);
       var url = canvas.toDataURL();
 
       var texture = new THREE.DataTexture(new Uint8Array(mergedData.data),
-	  basisDesc[i][0], basisDesc[i][1], THREE.RGBAFormat);
+          basisDesc[i][0], basisDesc[i][1], THREE.RGBAFormat);
       texture.needsUpdate = true;
 
-      this.textures_[i][j/4] = texture; 
+      this.textures_[i][j / 4] = texture;
       urls.push(url);
     }
   }

@@ -2,9 +2,8 @@
  * @fileoverview Unit testing of the ShaderLoader.
  */
 
-goog.require('vis.ShaderLoader');
-
 goog.require('goog.testing.jsunit');
+goog.require('vis.ShaderLoader');
 
 
 var URLS_ = ['test1.url', 'test2.url'];

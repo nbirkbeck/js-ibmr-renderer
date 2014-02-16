@@ -2,9 +2,8 @@
  * @fileoverview Unit testing of the BigTextureRenderer.
  */
 
-goog.require('vis.renderer.BigTextureRenderer');
-
 goog.require('goog.testing.jsunit');
+goog.require('vis.renderer.BigTextureRenderer');
 
 
 var IMAGE_SOURCES_ = [
@@ -68,7 +67,7 @@ var assertImage = function(data, offset) {
 var testInitFromTexturesSingle = function() {
   var renderer = new vis.renderer.BigTextureRenderer();
   renderer.initFromTextures([BASIS_DESC_], [BASIS_IMAGES_], function() { });
-    
+
   assertEquals(1, renderer.offs_[0]);
   assertEquals(2, renderer.textures_[0].image.width);
   assertEquals(2, renderer.textures_[0].image.height);
@@ -85,7 +84,7 @@ var testInitFromTexturesMultiple = function() {
   var renderer = new vis.renderer.BigTextureRenderer();
   renderer.initFromTextures([BASIS_DESC_, BASIS_DESC_],
       [BASIS_IMAGES_, BASIS_IMAGES_], function() { });
-    
+
   for (var i = 0; i < 2; i++) {
     assertEquals(2, renderer.textures_[0].image.width);
     assertEquals(2, renderer.textures_[0].image.height);
@@ -108,7 +107,7 @@ var testInitFromTexturesStacked = function() {
 
   var renderer = new vis.renderer.BigTextureRenderer();
   renderer.initFromTextures([basisDesc], [images], function() {});
-  
+
   assertEquals(2, renderer.textures_[0].image.width);
   assertEquals(4, renderer.textures_[0].image.height);
   assertEquals(0.5, renderer.offs_[0]);

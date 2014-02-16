@@ -1,7 +1,7 @@
 goog.provide('vis.types');
+goog.provide('vis.types.BasisDesc');
 goog.provide('vis.types.LutCoefficients');
 goog.provide('vis.types.LutDesc');
-goog.provide('vis.types.BasisDesc');
 
 
 
@@ -19,7 +19,7 @@ vis.types.LutCoefficients;
 vis.types.LutDesc;
 
 
-/** 
+/**
  * Size and num basis elements for each channel.
  *
  * @typedef {!Array.<Array.<number>>}

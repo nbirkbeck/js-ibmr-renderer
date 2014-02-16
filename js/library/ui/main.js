@@ -4,18 +4,18 @@
 
 goog.provide('vis.ui.Main');
 
-goog.require('vis.BufferedFile');
-goog.require('vis.YxvFileReader');
-goog.require('vis.PcaMesh');
-goog.require('vis.ShaderLoader');
-goog.require('vis.ui.Overlay');
-goog.require('vis.ui.events.EventType');
+goog.require('goog.debug.Logger');
 goog.require('goog.events');
 goog.require('goog.events.EventType');
 goog.require('goog.math.Coordinate');
 goog.require('goog.pubsub.PubSub');
 goog.require('goog.style');
-goog.require('goog.debug.Logger');
+goog.require('vis.BufferedFile');
+goog.require('vis.PcaMesh');
+goog.require('vis.ShaderLoader');
+goog.require('vis.YxvFileReader');
+goog.require('vis.ui.Overlay');
+goog.require('vis.ui.events.EventType');
 
 
 goog.scope(function() {
@@ -40,7 +40,7 @@ vis.ui.Main = function() {
   this.scene = new THREE.Scene();
 
   /** @type {!THREE.PerspectiveCamera} */
-  this.camera = new THREE.PerspectiveCamera(Main.FOVY_, 640/480, 0.1, 1000);
+  this.camera = new THREE.PerspectiveCamera(Main.FOVY_, 640 / 480, 0.1, 1000);
   this.camera.position.z = 1.5;
 
   /** @type {!THREE.WebGLRenderer} */
@@ -51,7 +51,7 @@ vis.ui.Main = function() {
 
   /**
    * Whether auto-rotate is on (turns off as soon as mouse is moved).
-   * @type {boolean} 
+   * @type {boolean}
    */
   this.autoRotate_ = true;
 
@@ -63,7 +63,7 @@ vis.ui.Main = function() {
 
   var container = document.getElementById('container');
   container.appendChild(this.renderer.domElement);
-  
+
   var directionalLight = new THREE.DirectionalLight(0xffffff, 0.95);
   directionalLight.position.set(0, 0, 1);
   this.scene.add(directionalLight);
@@ -79,17 +79,17 @@ vis.ui.Main = function() {
      goog.bind(function(numLoaded, numError) {
        this.logger_.info('Loaded shaders:' + numLoaded);
        if (numError) {
-	     this.logger_.severe('Shader loading with errors:' + numError);
-	     this.pubSub_.publish(events.EventType.FATAL_ERROR, 
-				  'Error loading shaders.');
-	 }
+         this.logger_.severe('Shader loading with errors:' + numError);
+         this.pubSub_.publish(events.EventType.FATAL_ERROR,
+             'Error loading shaders.');
+       }
      }, this));
 
   // Listen to mouse events on the canvas.
   goog.events.listen(this.renderer.domElement,
-	goog.events.EventType.MOUSEMOVE, goog.bind(this.onMouseMove_, this));
-  goog.events.listen(this.renderer.domElement, 
-	goog.events.EventType.MOUSEUP, goog.bind(this.onMouseUp_, this));
+      goog.events.EventType.MOUSEMOVE, goog.bind(this.onMouseMove_, this));
+  goog.events.listen(this.renderer.domElement,
+      goog.events.EventType.MOUSEUP, goog.bind(this.onMouseUp_, this));
   goog.events.listen(this.renderer.domElement,
       goog.events.EventType.MOUSEDOWN, goog.bind(this.onMouseDown_, this));
 };
@@ -103,11 +103,11 @@ var Main = vis.ui.Main;
 Main.prototype.object;
 
 
-/** 
+/**
  * The fov in y direction.
  * @private {number}
  * @const
- */ 
+ */
 Main.FOVY_ = 75;
 
 
@@ -121,7 +121,7 @@ Main.FOVY_ = 75;
 Main.prototype.loadModel = function(modelFile, onLoad, onError) {
   var fileReader = new vis.BufferedFile(modelFile);
   var reader = new vis.YxvFileReader();
- 
+
   reader.subscribe(vis.YxvFileReader.EventType.GEOMETRY, goog.bind(function() {
     this.object = reader.objects[0];
 
@@ -140,10 +140,11 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
     this.object.useShadedMaterial();
   }, this));
 
-  reader.subscribe(vis.YxvFileReader.EventType.STATIC_TEXTURE, goog.bind(function() {
-    //this.object.setUseStaticTexture(true);
-    this.render();
-  }, this));
+  reader.subscribe(vis.YxvFileReader.EventType.STATIC_TEXTURE, goog.bind(
+    function() {
+      //this.object.setUseStaticTexture(true);
+      this.render();
+    }, this));
 
   reader.subscribe(vis.YxvFileReader.EventType.BASIS, goog.bind(function() {
       this.onLoadModel_();
@@ -155,8 +156,8 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
 
   this.pubSub_.publish(events.EventType.DOWNLOAD_STARTED);
   fileReader.subscribeToProgress(goog.bind(function(loaded, total) {
-    this.pubSub_.publish(events.EventType.DOWNLOAD_PROGRESS, 
-			 loaded, total);
+    this.pubSub_.publish(events.EventType.DOWNLOAD_PROGRESS,
+        loaded, total);
 
     var buffer = new Uint8Array(fileReader.arrayBuffer);
     reader.read(buffer);
@@ -174,56 +175,56 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
   this.pubSub_.publish(events.EventType.DOWNLOAD_STARTED);
 
   this.logger_.info('LoadModel: Adding event listeners');
-  oReq.addEventListener("progress", goog.bind(function(evt) {
+  oReq.addEventListener('progress', goog.bind(function(evt) {
       if (evt.lengthComputable) {
-	  this.logger_.info('Loaded:' + evt.loaded);
-	  this.pubSub_.publish(events.EventType.DOWNLOAD_PROGRESS, 
-			       evt.loaded, evt.total);
+        this.logger_.info('Loaded:' + evt.loaded);
+        this.pubSub_.publish(events.EventType.DOWNLOAD_PROGRESS,
+            evt.loaded, evt.total);
       }
-  }, this), false); 
+  }, this), false);
 
-  oReq.onerror = function (oEvent) {
+  oReq.onerror = function(oEvent) {
       this.logger_.severe('Load model error.');
       if (oEvent) {
-	  onError(oEvent);
+        onError(oEvent);
       }
-  }; 
+  };
 
-  oReq.onabort = function (oEvent) {
+  oReq.onabort = function(oEvent) {
       this.logger_.severe('Load model aborted.');
       if (oEvent) {
-	  onError(oEvent);
+        onError(oEvent);
       }
   };
 
   this.logger_.info('LoadModel: Adding event listeners (onload)');
-  oReq.onload = goog.bind(function (oEvent) {
+  oReq.onload = goog.bind(function(oEvent) {
     this.pubSub_.publish(events.EventType.DOWNLOAD_COMPLETED);
 
     var arrayBuffer = oReq.response;
 
     if (arrayBuffer) {
-	var reader = new vis.YxvFileReader();
-	var buffer = new Uint8Array(arrayBuffer);
-        if (!reader.read(buffer)) {
-	    this.logger_.severe('Error loading model');
-	    onError(oEvent);
-	} else {
-  	    this.object = reader.objects[0];
+      var reader = new vis.YxvFileReader();
+      var buffer = new Uint8Array(arrayBuffer);
+      if (!reader.read(buffer)) {
+        this.logger_.severe('Error loading model');
+        onError(oEvent);
+      } else {
+        this.object = reader.objects[0];
 
-	    if (!this.onLoadModel_()) {
-		this.logger_.severe('Error loading model');
-		onError(oEvent);
-	    }
-	}
+        if (!this.onLoadModel_()) {
+          this.logger_.severe('Error loading model');
+          onError(oEvent);
+        }
+      }
     } else {
-	onError(oEvent);
+      onError(oEvent);
     }
   }, this);
 
   this.logger_.info('LoadModel: Opening...');
-  oReq.open("GET", modelFile, true);
-  oReq.responseType = "arraybuffer";
+  oReq.open('GET', modelFile, true);
+  oReq.responseType = 'arraybuffer';
 
   this.logger_.info('LoadModel: Sending...');
   oReq.send();
@@ -269,7 +270,7 @@ Main.prototype.run = function() {
 Main.prototype.removeAllObjects = function() {
   if (this.object) {
     this.scene.remove(this.object.getMesh());
-    this.object = undefined;    
+    this.object = undefined;
   }
 };
 
@@ -289,14 +290,14 @@ Main.prototype.setUseStaticTexture = function(value) {
  *
  * @param {boolean} value Use the shaded material.
  */
-Main.prototype.useShadedMaterial = function (value) {
+Main.prototype.useShadedMaterial = function(value) {
   this.object.useShadedMaterial();
 };
 
 
 /**
  * Get the lookup table coefficients for the object.
- * 
+ *
  */
 Main.prototype.getLutCoeffs = function() {
   if (this.object) {
@@ -309,9 +310,9 @@ Main.prototype.getLutCoeffs = function() {
 /**
  * Render the scene.
  */
-Main.prototype.render = function () {
+Main.prototype.render = function() {
   requestAnimationFrame(goog.bind(this.render, this));
-  
+
   if (this.object) {
     if (this.autoRotate_) {
       this.object.mesh.rotation.y += 0.02;
@@ -327,7 +328,7 @@ Main.prototype.render = function () {
 /**
  * Set whether the texture is currently frozen.
  *
- * @type {boolean} freeze
+ * @param {boolean} freeze
  */
 Main.prototype.setFreeze = function(freeze) {
   this.freeze_ = freeze;
@@ -359,9 +360,9 @@ Main.prototype.getBasisImages = function() {
  */
 Main.prototype.onLoadModel_ = function() {
   //this.object.useShadedMaterial();
-    
+
   this.object.loadBasisImages(goog.bind(function(value, message) {
-//	this.pubSub_.publish(events.EventType.TEXTURE_PROGRESS, value, message);
+   //  this.pubSub_.publish(events.EventType.TEXTURE_PROGRESS, value, message);
     }, this),
     goog.bind(function(urls) {
       this.object.initShaderMaterial();
@@ -370,14 +371,16 @@ Main.prototype.onLoadModel_ = function() {
 };
 
 
-/** 
+/**
  * Callback for mouse move.
+ *
+ * @param {Event} event
  * @private
  */
 Main.prototype.onMouseMove_ = function(event) {
   if (this.mouseDown_) {
     var mouse = this.getMouseCoordinate_(event);
-	
+
     var dx = mouse.x - this.mouseDown_.x;
     var dy = mouse.y - this.mouseDown_.y;
     if (this.object && this.object.mesh) {
@@ -390,8 +393,10 @@ Main.prototype.onMouseMove_ = function(event) {
 };
 
 
-/** 
+/**
  * Callback for mouse up.
+ *
+ * @param {Event} event
  * @private
  */
 Main.prototype.onMouseUp_ = function(event) {
@@ -399,8 +404,10 @@ Main.prototype.onMouseUp_ = function(event) {
 };
 
 
-/** 
+/**
  * Callback for mouse down.
+ *
+ * @param {Event} event
  * @private
  */
 Main.prototype.onMouseDown_ = function(event) {
@@ -410,14 +417,14 @@ Main.prototype.onMouseDown_ = function(event) {
 
 /**
  * Get the mouse coordinate relative to canvas element.
- * 
- * @param {Event}
+ *
+ * @param {Event} event
  * @return {!goog.math.Coordinate}
  * @private
  */
 Main.prototype.getMouseCoordinate_ = function(event) {
   var pageOffset = goog.style.getPageOffset(this.renderer.domElement);
-  return new goog.math.Coordinate(event.clientX - pageOffset.x, 
+  return new goog.math.Coordinate(event.clientX - pageOffset.x,
       event.clientY - pageOffset.y);
 };
 });  // goog.scope)
