@@ -257,9 +257,6 @@ PcaMesh.prototype.setLutCoeffs = function() {
       this.coeff[i][j] = (this.lut_[i][j][lutMin] * (1.0 - a) +
           this.lut_[i][j][lutMax] * a);
     }
-    for (var j = maxCoeff; j < this.getNumBasis(i); ++j) {
-      this.coeff[i][j] = 0;
-    }
   }
 
   if (this.renderer_) {
