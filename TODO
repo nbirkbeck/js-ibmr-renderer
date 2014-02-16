@@ -5,9 +5,12 @@ UI Elements
 ** 3) Show the current basis coefficients (say for first 3 or 4) 
 ** - Use flot?
 ** 4) Add basis explorer.
-
+** 5) Stream the files.
+   - This is done but stalls because uploading the textures takes
+     a long time.  The texture updating could be done in more incremental 
+     manner.
 
 Core:
 -Support 2D luts.
 -Make it compile with advanced optimizations (stuff is missing in three externs)
--Stream the files.
+-Warning for unsupported HW.

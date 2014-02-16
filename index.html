@@ -62,20 +62,22 @@
 </div>
 <script>
 
-var main = new ammi.Main();
+var main;
+var data = [[], [], []];
+
 var objects = [
   ['House', 'houseSFS.yxv'],
-  ['New House', 'newhouse.yxv'],
+  ['NewHouse', 'newhouse.yxv'],
   ['Elephant', 'elephant_scorpion.yxv'],
-  ['Emperor', 'emperor.yxv'],
+/*  ['Emperor', 'emperor.yxv'], */
   ['Guba', 'Guba.yxv'],
   ['Patches', 'Patches.yxv'],
-  ['Quack2', 'quack2.yxv'],
+/*  ['Quack2', 'quack2.yxv'], */
   ['Adam', 'adam.yxv'],
 /*  ['Granite', 'Granite.yxv'], */
-  ['Neil Chair', 'neil_small.yxv'],
-  ['Ronald', 'ronaldmcdonald.yxv'],
-  ['Fazer', 'Fazer.yxv']
+  ['NeilChair', 'neil_small.yxv']
+/*  ['Ronald', 'ronaldmcdonald.yxv'],
+  ['Fazer', 'Fazer.yxv'] */
 ];
 
 var objectsEl = $("#objects");
@@ -103,28 +105,28 @@ for (var i = 0; i < objects.length; ++i) {
 
 
 function createBasisTab(tab, images, j) {
-    var imageObjects = [];
-      var div = $("<div/>");
-      for (var i = 0; i < images.length; ++i) {
-         imageObjects.push($("<img class='basis-image' src='" + URL.createObjectURL(images[i]) + "'></img>"));
-         imageObjects[i].hide();
-         div.append(imageObjects[i]);
-       }
+  var imageObjects = [];
+  var div = $("<div/>");
+  for (var i = 0; i < images.length; ++i) {
+     imageObjects.push($("<img class='basis-image' src='" + URL.createObjectURL(images[i]) + "'></img>"));
+     imageObjects[i].hide();
+     div.append(imageObjects[i]);
+   }
 
-       var slider = $('<div></div>').slider({
-	min: 0,
-	max: imageObjects.length - 1,
-	slide: function(event, ui) {
-	   for (var i = 0; i < imageObjects.length; ++i) {
-              imageObjects[i].hide();
-	   } 
-	   imageObjects[ui.value].show();
-       }});
-       slider.slider({value: 0});
-       imageObjects[0].show();
+   var slider = $('<div></div>').slider({
+    min: 0,
+    max: imageObjects.length - 1,
+    slide: function(event, ui) {
+       for (var i = 0; i < imageObjects.length; ++i) {
+          imageObjects[i].hide();
+       } 
+       imageObjects[ui.value].show();
+   }});
+   slider.slider({value: 0});
+   imageObjects[0].show();
 
-       tab.append(div);
-       tab.append(slider);
+   tab.append(div);
+   tab.append(slider);
 }
 
 $(function() {
@@ -157,6 +159,8 @@ $(function() {
 
   $('#tabs').tabs();
   $('#tabs').removeClass('ui-corner-all');
+
+  setupMainWindow();
 });
 
 // Setup the selection.
@@ -181,26 +185,27 @@ freeze.onchange = function() {
    main.setFreeze(freeze.checked);
 }
 
-var data = [[], [], []];
-var t = 0;
-window.setInterval(function() {
-  var coeffs = main.getLutCoeffs();
+function setupMainWindow() {
+  main = new ammi.Main();
+  var t = 0;
+  window.setInterval(function() {
+    var coeffs = main.getLutCoeffs();
 
-  if (coeffs && coeffs.length) {
-    for (var i = 0; i < data.length; ++i) {
-      data[i].push([t, coeffs[0][i + 1]]);
+    if (coeffs && coeffs.length) {
+      for (var i = 0; i < data.length; ++i) {
+        data[i].push([t, coeffs[0][i + 1]]);
 
-      if (data[i].length > 120) {
-        data[i] = data[i].slice(data[i].length - 120, data[i].length);
+        if (data[i].length > 120) {
+          data[i] = data[i].slice(data[i].length - 120, data[i].length);
+        }
       }
+      t += 1;
+
+      $.plot('#plot', data);
     }
-    t += 1;
-
-    $.plot('#plot', data);
-  }
-}, 50);
-main.run();
-
+  }, 50);
+  main.run();
+}
 </script>
 </body>
 </html>

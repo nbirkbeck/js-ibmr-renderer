@@ -33,6 +33,12 @@ vis.ui.Main = function() {
   /** @private {!goog.debug.Logger} */
   this.logger_ = goog.debug.Logger.getLogger('vis.ui.Main');
 
+  /** @private {!goog.pubsub.PubSub} */
+  this.pubSub_ = new goog.pubsub.PubSub();
+
+  // Setup the overlay.
+  this.overlay_ = new vis.ui.Overlay(this.pubSub_, container);
+
   /** @private {boolean} */
   this.freeze_ = false;
 
@@ -43,8 +49,24 @@ vis.ui.Main = function() {
   this.camera = new THREE.PerspectiveCamera(Main.FOVY_, 640 / 480, 0.1, 1000);
   this.camera.position.z = 1.5;
 
-  /** @type {!THREE.WebGLRenderer} */
-  this.renderer = new THREE.WebGLRenderer();
+  try {
+    /** @type {!THREE.WebGLRenderer} */
+    this.renderer = new THREE.WebGLRenderer();
+  } catch (error) {
+    this.pubSub_.publish(events.EventType.FATAL_ERROR,
+        'Error initializing WebGL. Your graphics hardware may not be good ' +
+        'enough, or your browser is too old. Try chrome or firefox.');    
+    return;
+  }
+  var context = this.renderer.getContext();
+  if (context.getParameter(context.MAX_TEXTURE_IMAGE_UNITS) < 2 ||
+      context.getParameter(context.MAX_TEXTURE_SIZE) < 4096) {
+    this.pubSub_.publish(events.EventType.FATAL_ERROR,
+        'Your graphics is may not be good enough.');
+    return;
+  }
+      
+
   this.renderer.setSize(640, 480);
   this.renderer.setDepthTest(true);
   this.renderer.setDepthWrite(true);
@@ -67,12 +89,6 @@ vis.ui.Main = function() {
   var directionalLight = new THREE.DirectionalLight(0xffffff, 0.95);
   directionalLight.position.set(0, 0, 1);
   this.scene.add(directionalLight);
-
-  /** @private {!goog.pubsub.PubSub} */
-  this.pubSub_ = new goog.pubsub.PubSub();
-
-  // Setup the overlay.
-  this.overlay_ = new vis.ui.Overlay(this.pubSub_, container);
 
   // Log load shader errors.
   ShaderLoader.getInstance().loadShaders(

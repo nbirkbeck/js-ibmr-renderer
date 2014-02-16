@@ -5,6 +5,7 @@
 goog.provide('vis.ui.Overlay');
 
 goog.require('goog.dom');
+goog.require('goog.dom.classes');
 goog.require('vis.ui.events.EventType');
 
 
@@ -45,6 +46,8 @@ vis.ui.Overlay = function(pubSub, container) {
       this.onTextureProgress_, this);
   pubSub.subscribe(events.EventType.OBJECT_READY,
       this.onObjectReady_, this);
+  pubSub.subscribe(events.EventType.FATAL_ERROR,
+      this.onFatalError_, this);
 };
 
 
@@ -114,5 +117,16 @@ vis.ui.Overlay.prototype.onTextureProgress_ = function(progress, message) {
  */
 vis.ui.Overlay.prototype.onObjectReady_ = function() {
   $(this.rootEl_).fadeOut(1000);
+};
+
+
+/**
+ * Callback when the object is ready.
+ *
+ * @private
+ */
+vis.ui.Overlay.prototype.onFatalError_ = function(error) {
+  this.message_.innerHTML = error;
+  goog.dom.classes.add(document.body, 'error');
 };
 });  // goog.scope)
