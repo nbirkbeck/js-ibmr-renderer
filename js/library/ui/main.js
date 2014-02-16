@@ -14,6 +14,7 @@ goog.require('vis.BufferedFile');
 goog.require('vis.PcaMesh');
 goog.require('vis.ShaderLoader');
 goog.require('vis.YxvFileReader');
+goog.require('vis.renderer.BigTextureRenderer');
 goog.require('vis.ui.Overlay');
 goog.require('vis.ui.events.EventType');
 
@@ -42,6 +43,9 @@ vis.ui.Main = function() {
   /** @private {boolean} */
   this.freeze_ = false;
 
+  /** @private {!Date} */
+  this.animationDate_ = new Date();
+
   /** @type {!THREE.Scene} */
   this.scene = new THREE.Scene();
 
@@ -65,7 +69,12 @@ vis.ui.Main = function() {
         'Your graphics is may not be good enough.');
     return;
   }
-      
+  vis.renderer.BigTextureRenderer.MAX_TEXTURE_SIZE = context.getParameter(
+      context.MAX_TEXTURE_SIZE);
+
+  var div = goog.dom.createDom('div');
+  div.innerHTML = 'Max texture size:' + vis.renderer.BigTextureRenderer.MAX_TEXTURE_SIZE;
+  document.body.appendChild(div);
 
   this.renderer.setSize(640, 480);
   this.renderer.setDepthTest(true);
@@ -163,11 +172,13 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
     }, this));
 
   reader.subscribe(vis.YxvFileReader.EventType.BASIS, goog.bind(function() {
-      this.onLoadModel_();
+    this.onLoadModel_();
+    this.render();
   }, this));
 
   reader.subscribe(vis.YxvFileReader.EventType.LUT, goog.bind(function() {
-      this.onLoadModel_();
+    this.onLoadModel_();
+    this.render();
   }, this));
 
   this.pubSub_.publish(events.EventType.DOWNLOAD_STARTED);
@@ -183,67 +194,6 @@ Main.prototype.loadModel = function(modelFile, onLoad, onError) {
     this.onLoadModel_();
     this.pubSub_.publish(events.EventType.OBJECT_READY);
   }, this));
-  return;
-
-  var oReq = new XMLHttpRequest();
-
-  this.logger_.info('LoadModel: Set response type');
-  this.pubSub_.publish(events.EventType.DOWNLOAD_STARTED);
-
-  this.logger_.info('LoadModel: Adding event listeners');
-  oReq.addEventListener('progress', goog.bind(function(evt) {
-      if (evt.lengthComputable) {
-        this.logger_.info('Loaded:' + evt.loaded);
-        this.pubSub_.publish(events.EventType.DOWNLOAD_PROGRESS,
-            evt.loaded, evt.total);
-      }
-  }, this), false);
-
-  oReq.onerror = function(oEvent) {
-      this.logger_.severe('Load model error.');
-      if (oEvent) {
-        onError(oEvent);
-      }
-  };
-
-  oReq.onabort = function(oEvent) {
-      this.logger_.severe('Load model aborted.');
-      if (oEvent) {
-        onError(oEvent);
-      }
-  };
-
-  this.logger_.info('LoadModel: Adding event listeners (onload)');
-  oReq.onload = goog.bind(function(oEvent) {
-    this.pubSub_.publish(events.EventType.DOWNLOAD_COMPLETED);
-
-    var arrayBuffer = oReq.response;
-
-    if (arrayBuffer) {
-      var reader = new vis.YxvFileReader();
-      var buffer = new Uint8Array(arrayBuffer);
-      if (!reader.read(buffer)) {
-        this.logger_.severe('Error loading model');
-        onError(oEvent);
-      } else {
-        this.object = reader.objects[0];
-
-        if (!this.onLoadModel_()) {
-          this.logger_.severe('Error loading model');
-          onError(oEvent);
-        }
-      }
-    } else {
-      onError(oEvent);
-    }
-  }, this);
-
-  this.logger_.info('LoadModel: Opening...');
-  oReq.open('GET', modelFile, true);
-  oReq.responseType = 'arraybuffer';
-
-  this.logger_.info('LoadModel: Sending...');
-  oReq.send();
 };
 
 
@@ -276,7 +226,7 @@ Main.prototype.setBasisPercent = function(pct) {
  * Run the main application.
  */
 Main.prototype.run = function() {
-  this.render();
+  this.renderLoop();
 };
 
 
@@ -324,14 +274,26 @@ Main.prototype.getLutCoeffs = function() {
 
 
 /**
+ * Render the scene and queue up a render to happen on the next animation
+ * frame.
+ */
+Main.prototype.renderLoop = function() {
+  this.render();
+  requestAnimationFrame(goog.bind(this.renderLoop, this));
+};
+
+
+/**
  * Render the scene.
  */
 Main.prototype.render = function() {
-  requestAnimationFrame(goog.bind(this.render, this));
+  var date = new Date();
+  var elapsedTime = (date - this.animationDate_) / 1000.0;
+  this.animationDate_ = date;
 
   if (this.object) {
     if (this.autoRotate_) {
-      this.object.mesh.rotation.y += 0.02;
+      this.object.mesh.rotation.y += elapsedTime;
     }
     if (!this.freeze_) {
       this.object.setLutCoeffs();
@@ -377,8 +339,12 @@ Main.prototype.getBasisImages = function() {
 Main.prototype.onLoadModel_ = function() {
   //this.object.useShadedMaterial();
 
+  var date = new Date();
   this.object.loadBasisImages(goog.bind(function(value, message) {
-   //  this.pubSub_.publish(events.EventType.TEXTURE_PROGRESS, value, message);
+      if (window.console && window.console.log) {
+        console.log(message);
+      }
+      this.render();
     }, this),
     goog.bind(function(urls) {
       this.object.initShaderMaterial();

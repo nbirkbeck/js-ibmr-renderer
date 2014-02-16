@@ -93,8 +93,11 @@ vis.PcaMesh = function(id, basisDesc, lutDesc) {
     }
   }
 
-  /** @private {number} */
-  this.numBasisLoaded_ = 0;
+  /** @private {Array.<number>} */
+  this.numBasisLoaded_ = [0, 0, 0];
+
+  /** @private {Array.<number>} */
+  this.numBasisReady_ = [0, 0, 0];
 
   /** @private {vis.renderer.Renderer} */
   this.renderer_ = new vis.renderer.BigTextureRenderer();
@@ -129,7 +132,6 @@ PcaMesh.prototype.setGeometry = function(geometry) {
 PcaMesh.prototype.setBasisPercent = function(percent) {
   this.basisPercent_ = percent;
 };
-
 
 
 /**
@@ -249,11 +251,14 @@ PcaMesh.prototype.setLutCoeffs = function() {
           (this.lutRangeMin_[1] + 360.0 - this.lutRangeMax_[1]);
     }
     var maxCoeff = Math.ceil(this.basisPercent_ *
-        this.getNumLoadedBasis(i) / 100 / 4) * 4;
+        this.numBasisReady_[i] / 100 / 4) * 4;
     maxCoeff = Math.max(4, Math.min(this.getNumLoadedBasis(i), maxCoeff));
     for (var j = 0; j < maxCoeff; ++j) {
       this.coeff[i][j] = (this.lut_[i][j][lutMin] * (1.0 - a) +
           this.lut_[i][j][lutMax] * a);
+    }
+    for (var j = maxCoeff; j < this.getNumBasis(i); ++j) {
+      this.coeff[i][j] = 0;
     }
   }
 
@@ -390,19 +395,21 @@ PcaMesh.prototype.loadBasisImages = function(progress, callback) {
     }
   }
   var basisDesc = [];
-  var minNumBasis = 1e10;
+  var numChannelsNeedLoad = 0;
   for (var i = 0; i < this.getNumChannels(); ++i) {
     basisDesc[i] = [this.basisDesc_[i][0], this.basisDesc_[i][1]];
     basisDesc[i][2] = this.getNumLoadedBasis(i);
-    minNumBasis = Math.min(basisDesc[i][2], minNumBasis);
+    this.renderer_.clampNumBasis(basisDesc);
+
+    if (basisDesc[i][2] > this.numBasisLoaded_[i]) {
+      numChannelsNeedLoad++;
+    }
+    this.numBasisLoaded_[i] = basisDesc[i][2];
   }
-  if (minNumBasis == 0) {
+
+  if (numChannelsNeedLoad == 0) {
     return;
   }
-  if (minNumBasis <= this.numBasisLoaded_) {
-    return;
-  }
-  this.numBasisLoaded_ = minNumBasis;
 
   progress(0, 'Setting up images');
   for (var i = 0; i < this.getNumChannels(); ++i) {
@@ -417,13 +424,17 @@ PcaMesh.prototype.loadBasisImages = function(progress, callback) {
           progress(0.1 * loaded / totalImages, 'Setting up images');
 
           if (loaded == totalImages) {
-            var urls = this.renderer_.initFromTextures(basisDesc,
-            this.basisImages_, function(percent, message) {
-              progress(0.9 * percent, message);
-            });
-            callback(urls);
-          }
-        }, this);
+            this.renderer_.initFromTextures(basisDesc, this.basisDesc_,
+              this.basisImages_, function(percent, message) {
+                progress(0.9 * percent, message);
+              }, goog.bind(function() {
+                for (var i = 0; i < 3; ++i) {
+                  this.numBasisReady_[i] = basisDesc[i][2];
+                }
+                callback();
+              }, this));
+            }
+          }, this);
 
         image.setAttribute('src', URL.createObjectURL(this.getBasis(i)[j]));
         this.basisImages_[i][j] = image;

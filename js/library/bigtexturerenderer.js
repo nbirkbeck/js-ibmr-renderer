@@ -32,6 +32,10 @@ renderer.BigTextureRenderer = function() {
 goog.inherits(renderer.BigTextureRenderer, renderer.BaseRenderer);
 
 
+/** @const {number} */
+renderer.BigTextureRenderer.MAX_TEXTURE_SIZE = 8192;
+
+
 /**
  * The relative url to the vertex shader.
  * @private
@@ -72,7 +76,6 @@ renderer.BigTextureRenderer.prototype.initMaterial = function(coeff) {
     'numBasisU': {type: 'i', value: coeff[1].length},
     'numBasisV': {type: 'i', value: coeff[2].length}
   };
-
   this.material = new THREE.ShaderMaterial({
     fragmentShader: this.fragmentShader,
     vertexShader: this.vertexShader,
@@ -97,51 +100,95 @@ renderer.BigTextureRenderer.prototype.setCoeff = function(coeff) {
 
 
 /** @override */
+renderer.BigTextureRenderer.prototype.clampNumBasis = function(basisDesc) {
+  if (basisDesc[1] * basisDesc[2] / 4 >
+      renderer.BigTextureRenderer.MAX_TEXTURE_SIZE) {
+    basisDesc[2] = Math.floor(renderer.BigTextureRenderer.MAX_TEXTURE_SIZE /
+        basisDesc[1] / 4) * 4;
+  }
+};
+
+
+/** @override */
 renderer.BigTextureRenderer.prototype.initFromTextures = function(basisDesc, 
-    basisImages, progress) {
+    fullBasisDesc, basisImages, progress, callback) {
   var sepCanvas = document.createElement('canvas');
   sepCanvas.width = basisDesc[0][0];
   sepCanvas.height = basisDesc[0][1];
   var sepCtx = sepCanvas.getContext('2d');
 
   var urls = [];
-  this.textures_ = [];
+  // make sure that we don't recieve more basis elements than we can handle.
+  for (var i = 0; i < basisDesc.length; ++i) {
+    this.clampNumBasis(basisDesc[i]);
+    this.clampNumBasis(fullBasisDesc[i]);
+  }
+
+  if (!this.packedData) {
+    this.textures_ = [];
+    this.packedData = [];
+    this.loadedAlready = [];
+
+    for (var i = 0; i < basisDesc.length; ++i) {
+      this.packedData[i] = new Uint8Array(basisDesc[i][0] * basisDesc[i][1] *
+        fullBasisDesc[i][2]);
+      this.loadedAlready[i] = 0;
+
+      this.textures_[i] = new THREE.DataTexture(this.packedData[i],
+          basisDesc[i][0], basisDesc[i][1] * fullBasisDesc[i][2] / 4,
+          THREE.RGBAFormat);
+      this.offs_[i] = 1.0 / (fullBasisDesc[i][2] / 4);
+    }
+  }
+
+  var numChannelsLoaded = 0;
+  var numRequired = 0;
+
+  var packFunction = function(sepCtx, i, j, maxNumBasis, mergedData) {
+    for (var k = 0; k < 4; ++k) {
+      sepCtx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
+      sepCtx.drawImage(basisImages[i][j + k], 0, 0,
+          basisDesc[i][0], basisDesc[i][1]);
+
+      var imageData = sepCtx.getImageData(0, 0,
+          basisDesc[i][0], basisDesc[i][1]);
+      var sepPixels = imageData.data;
+      var length = sepPixels.length;
+
+      var base = (fullBasisDesc[i][2] - j - 4) * basisDesc[i][0] *
+          basisDesc[i][1];
+
+      for (var z = 0; z < length; z += 4) {
+        mergedData[base + z + k] = sepPixels[z];
+      }
+    }
+    var value = i / basisDesc.length +
+        (1 / basisDesc.length) * (j / maxNumBasis);
+
+    progress(value, 'Loaded texture channel:' + i + ' basis:' + j);
+    if (j + 4 < maxNumBasis) {
+      setTimeout(goog.bind(packFunction, this, sepCtx, i, j + 4, maxNumBasis,
+          mergedData), 0);
+    } else {
+      this.textures_[i].needsUpdate = true;
+
+      numChannelsLoaded++;
+      if (numChannelsLoaded == numRequired) {
+        callback(urls);
+      }
+    }
+  };
+
+
   for (var i = 0; i < basisDesc.length; ++i) {
     var maxNumBasis = basisDesc[i][2];
-    var mergedData = new Uint8Array(basisDesc[i][0] * basisDesc[i][1] *
-        maxNumBasis);
-
-    for (var j = 0; j < maxNumBasis; j += 4) {
-      for (var k = 0; k < 4; ++k) {
-        sepCtx.clearRect(0, 0, basisDesc[i][0], basisDesc[i][1]);
-        sepCtx.drawImage(basisImages[i][j + k], 0, 0,
-            basisDesc[i][0], basisDesc[i][1]);
-
-        var imageData = sepCtx.getImageData(0, 0,
-            basisDesc[i][0], basisDesc[i][1]);
-        var sepPixels = imageData.data;
-        var length = sepPixels.length;
-
-        var base = (maxNumBasis - j - 4) * basisDesc[i][0] *
-            basisDesc[i][1];
-
-        for (var z = 0; z < length; z += 4) {
-          mergedData[base + z + k] = sepPixels[z];
-        }
-      }
-      var value = i / basisDesc.length +
-          (1 / basisDesc.length) * (j / maxNumBasis);
-
-      progress(value, 'Loaded texture channel:' + i + ' basis:' + j);
+    var mergedData = this.packedData[i];
+    if (this.loadedAlready[i] < maxNumBasis) {
+      numRequired++;
+      setTimeout(goog.bind(packFunction, this, sepCtx, i, this.loadedAlready[i],
+          maxNumBasis, mergedData), 0);
     }
-
-    var texture = new THREE.DataTexture(mergedData,
-        basisDesc[i][0], basisDesc[i][1] * maxNumBasis / 4,
-        THREE.RGBAFormat);
-    texture.needsUpdate = true;
-    this.textures_[i] = texture;
-    this.offs_[i] = 1.0 / (maxNumBasis / 4);
+    this.loadedAlready[i] = maxNumBasis;
   }
-  return urls;
 };
 });   // goog.scope)

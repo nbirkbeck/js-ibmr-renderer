@@ -65,6 +65,15 @@ renderer.BaseRenderer.prototype.initFromTextures = goog.abstractFunction;
 
 
 /**
+ * Some renderers may not be able to support all the basis functions, this
+ * function gives the renderer a chance to clamp the results.
+ *
+ * @param {!Array.<number>} channelBasisDesc Basis desc for one channel.
+ */
+renderer.BaseRenderer.prototype.clampNumBasis = goog.abstractFunction;
+
+
+/**
  * Set the array of coefficients used to render the basis.
  *
  * @param {!vis.types.LutCoefficients} coeff

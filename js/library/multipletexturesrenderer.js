@@ -72,10 +72,12 @@ renderer.MultipleTexturesRenderer.prototype.setCoeff = function(coeff) {
  *
  * @param {!vis.types.BasisDesc} basisDesc
  * @param {!Array.<!Array.<!Image>>} basisImages
+ * @param {function()} progress
+ * @param {function()} callback
  * @return {!Array.<!Image>}
  */
 renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(
-    basisDesc, basisImages) {
+    basisDesc, basisImages, progress, callback) {
   var canvas = document.createElement('canvas');
   canvas.width = basisDesc[0][0];
   canvas.height = basisDesc[0][1];
@@ -126,6 +128,6 @@ renderer.MultipleTexturesRenderer.prototype.initFromTextures = function(
       urls.push(url);
     }
   }
-  return urls;
+  callback(urls);
 };
 });  // goog.scope
