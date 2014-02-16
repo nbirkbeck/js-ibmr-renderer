@@ -13,8 +13,11 @@ cat << EOF
 </body>
 
 <script>
-var asyncTestCase =
-        goog.testing.AsyncTestCase.createAndInstall(document.title);
+var asyncTestCase;
+try {
+  asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(document.title);
+} catch (error) {
+}
 </script>
 </html>
 EOF

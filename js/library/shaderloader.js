@@ -16,14 +16,14 @@ goog.scope(function() {
  * @constructor
  */
 vis.ShaderLoader = function() {
-    /**
-     * The list of shaders to load.
-     * @private {Array.<string>}
-     */
-    this.shaderUrls_ = [];
+  /**
+   * The list of shaders to load.
+   * @private {Array.<string>}
+   */
+  this.shaderUrls_ = [];
 
-    /** @private {goog.structs.Map} */
-    this.shaderMap_ = new goog.structs.Map();
+  /** @private {goog.structs.Map} */
+  this.shaderMap_ = new goog.structs.Map();
 };
 var ShaderLoader = vis.ShaderLoader;
 goog.addSingletonGetter(ShaderLoader);
@@ -34,7 +34,7 @@ goog.addSingletonGetter(ShaderLoader);
  * @param {string} url
  */
 ShaderLoader.prototype.addShaderUrl = function(url) {
-    this.shaderUrls_.push(url);
+  this.shaderUrls_.push(url);
 };
 
 
@@ -45,7 +45,7 @@ ShaderLoader.prototype.addShaderUrl = function(url) {
  * @return {string}
  */
 ShaderLoader.prototype.getShader = function(url) {
-    return this.shaderMap_.get(url);
+  return this.shaderMap_.get(url);
 };
 
 
@@ -55,25 +55,25 @@ ShaderLoader.prototype.getShader = function(url) {
  * @param {function(number, number)} complete Callback to notify on completion.
  */
 ShaderLoader.prototype.loadShaders = function(complete) {
-    var numLoaded = 0;
-    var numErrors = 0;
+  var numLoaded = 0;
+  var numErrors = 0;
 
-    var shaderLoader = this;
-    goog.array.forEach(this.shaderUrls_, function(url, i) {
-      jQuery.get(url, undefined, goog.bind(function(data) {
-	 this.shaderMap_.set(url, data);
-	 numLoaded++;
-	 if (numLoaded == this.shaderUrls_.length) {
-	     complete(numLoaded, numErrors);
-	 }
-      }, shaderLoader)).error(goog.bind(function() {
-         this.shaderMap_.set(url, null);
-	 numLoaded++;
-	 numErrors++;
-	 if (numLoaded == this.shaderUrls_.length) {
-	     complete(numLoaded, numErrors);
-	 }
-      }, shaderLoader));
-    });
+  var shaderLoader = this;
+  goog.array.forEach(this.shaderUrls_, function(url, i) {
+    jQuery.get(url, undefined, goog.bind(function(data) {
+      this.shaderMap_.set(url, data);
+      numLoaded++;
+      if (numLoaded == this.shaderUrls_.length) {
+	complete(numLoaded, numErrors);
+      }
+    }, shaderLoader)).error(goog.bind(function() {
+      this.shaderMap_.set(url, null);
+      numLoaded++;
+      numErrors++;
+      if (numLoaded == this.shaderUrls_.length) {
+	complete(numLoaded, numErrors);
+      }
+    }, shaderLoader));
+  });
 };
 });  // goog.scope)

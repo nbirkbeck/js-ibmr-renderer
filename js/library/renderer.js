@@ -17,19 +17,19 @@ var renderer = vis.renderer;
  * @constructor
  */
 renderer.BaseRenderer = function(vertShaderUrl, fragShaderUrl) { 
-    /** @type {!THREE.Material} */
-    this.material = new THREE.Material();
+  /** @type {!THREE.Material} */
+  this.material = new THREE.Material();
 
-    /** @protected {string} */
-    this.vertexShader = '';
-    
-    /** @protected {string} */
-    this.fragmentShader = '';
+  /** @protected {string} */
+  this.vertexShader = '';
+  
+  /** @protected {string} */
+  this.fragmentShader = '';
 
-    /** @protected {!Array.<!Array<number>>} */
-    this.coeff = [];
+  /** @protected {!Array.<!Array<number>>} */
+  this.coeff = [];
 
-    this.loadShaders(vertShaderUrl, fragShaderUrl);
+  this.loadShaders(vertShaderUrl, fragShaderUrl);
 };
 
 
@@ -51,8 +51,8 @@ renderer.yuvToRgb = new THREE.Matrix4(1 , 0 , 1 , 0,
  * @protected
  */
 renderer.BaseRenderer.prototype.loadShaders = function(vertShaderUrl, fragShaderUrl) {
-    this.vertexShader = vis.ShaderLoader.getInstance().getShader(vertShaderUrl);
-    this.fragmentShader = vis.ShaderLoader.getInstance().getShader(fragShaderUrl);
+  this.vertexShader = vis.ShaderLoader.getInstance().getShader(vertShaderUrl);
+  this.fragmentShader = vis.ShaderLoader.getInstance().getShader(fragShaderUrl);
 };
 
 
@@ -69,7 +69,7 @@ renderer.BaseRenderer.prototype.initFromTextures = goog.abstractFunction;
  * @param {!vis.types.LutCoefficients} coeff
  */ 
 renderer.BaseRenderer.prototype.setCoeff = function(coeff) {
-    this.coeff = coeff;
+  this.coeff = coeff;
 };
 
 

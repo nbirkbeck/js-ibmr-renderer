@@ -20,31 +20,31 @@ var events = vis.ui.events;
  * @constructor
  */
 vis.ui.Overlay = function(pubSub, container) {
-    /** @private {!Element} */
-    this.rootEl_ = goog.dom.getElementByClass(
-        vis.ui.Overlay.CssClasses_.OVERLAY, container);
-    
-    /** @private {!Element} */
-    this.progress_ = goog.dom.getElementByClass(
-        vis.ui.Overlay.CssClasses_.PROGRESS, this.rootEl_);
+  /** @private {!Element} */
+  this.rootEl_ = goog.dom.getElementByClass(
+      vis.ui.Overlay.CssClasses_.OVERLAY, container);
+  
+  /** @private {!Element} */
+  this.progress_ = goog.dom.getElementByClass(
+      vis.ui.Overlay.CssClasses_.PROGRESS, this.rootEl_);
 
-    /** @private {!Element} */
-    this.message_ = goog.dom.getElementByClass(
-        vis.ui.Overlay.CssClasses_.MESSAGE, this.rootEl_);
+  /** @private {!Element} */
+  this.message_ = goog.dom.getElementByClass(
+      vis.ui.Overlay.CssClasses_.MESSAGE, this.rootEl_);
 
-    $(this.rootEl_).show(100);
+  $(this.rootEl_).show(100);
 
-    // Attach to the pubsub.
-    pubSub.subscribe(events.EventType.DOWNLOAD_PROGRESS, 
-        this.onDownloadProgress_, this);
-    pubSub.subscribe(events.EventType.DOWNLOAD_STARTED, 
-        this.onDownloadStarted_, this);
-    pubSub.subscribe(events.EventType.DOWNLOAD_COMPLETED, 
-        this.onDownloadCompleted_, this);
-    pubSub.subscribe(events.EventType.TEXTURE_PROGRESS, 
-        this.onTextureProgress_, this);
-    pubSub.subscribe(events.EventType.OBJECT_READY, 
-        this.onObjectReady_, this);
+  // Attach to the pubsub.
+  pubSub.subscribe(events.EventType.DOWNLOAD_PROGRESS, 
+      this.onDownloadProgress_, this);
+  pubSub.subscribe(events.EventType.DOWNLOAD_STARTED, 
+      this.onDownloadStarted_, this);
+  pubSub.subscribe(events.EventType.DOWNLOAD_COMPLETED, 
+      this.onDownloadCompleted_, this);
+  pubSub.subscribe(events.EventType.TEXTURE_PROGRESS, 
+      this.onTextureProgress_, this);
+  pubSub.subscribe(events.EventType.OBJECT_READY, 
+      this.onObjectReady_, this);
 };
 
 
@@ -55,9 +55,9 @@ vis.ui.Overlay = function(pubSub, container) {
  * @private
  */
 vis.ui.Overlay.CssClasses_ = {
-    OVERLAY: 'window-overlay',
-    PROGRESS: 'overlay-progress',
-    MESSAGE: 'overlay-message'
+  OVERLAY: 'window-overlay',
+  PROGRESS: 'overlay-progress',
+  MESSAGE: 'overlay-message'
 };
 
 
@@ -66,8 +66,8 @@ vis.ui.Overlay.CssClasses_ = {
  * @private 
  */
 vis.ui.Overlay.prototype.onDownloadStarted_ = function() {
-    this.message_.innerHTML = 'Download started.';
-    $(this.rootEl_).fadeIn(100);
+  this.message_.innerHTML = 'Download started.';
+  $(this.rootEl_).fadeIn(100);
 };
 
 
@@ -79,8 +79,8 @@ vis.ui.Overlay.prototype.onDownloadStarted_ = function() {
  * @private 
  */
 vis.ui.Overlay.prototype.onDownloadProgress_ = function(numBytes, totalBytes) {
-    this.message_.innerHTML = 'Downloading:' + 
-        (numBytes / totalBytes * 100).toFixed(1) + '%';
+  this.message_.innerHTML = 'Downloading:' + 
+      (numBytes / totalBytes * 100).toFixed(1) + '%';
 };
 
 
@@ -90,7 +90,7 @@ vis.ui.Overlay.prototype.onDownloadProgress_ = function(numBytes, totalBytes) {
  * @private 
  */
 vis.ui.Overlay.prototype.onDownloadCompleted_ = function() {
-    this.message_.innerHTML = 'Download complete.';
+  this.message_.innerHTML = 'Download complete.';
 };
 
 
@@ -102,8 +102,8 @@ vis.ui.Overlay.prototype.onDownloadCompleted_ = function() {
  * @private 
  */
 vis.ui.Overlay.prototype.onTextureProgress_ = function(progress, message) {
-    this.message_.innerHTML = 'Uploading textures ' + 
-        (progress * 100).toFixed(1) + '% complete.' + message;
+  this.message_.innerHTML = 'Uploading textures ' + 
+      (progress * 100).toFixed(1) + '% complete.' + message;
 };
 
 
@@ -113,6 +113,6 @@ vis.ui.Overlay.prototype.onTextureProgress_ = function(progress, message) {
  * @private
  */
 vis.ui.Overlay.prototype.onObjectReady_ = function() {
-    $(this.rootEl_).fadeOut(1000);
+  $(this.rootEl_).fadeOut(1000);
 };
 });  // goog.scope)
